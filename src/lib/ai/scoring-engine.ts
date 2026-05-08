@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { type FeedData, type FeedPost } from "@/lib/adapters/types";
 
 export interface AestheticScores {
@@ -29,7 +29,13 @@ Score each dimension from 0-100:
 
 Also provide:
 - An **overall** aesthetic score (0-100), weighted average favoring consistency and originality
-- A brief **summary** (1-2 sentences in Korean) describing the account's aesthetic vibe
+- A **summary** in Korean (2-3 sentences). This summary is for brand marketers evaluating influencer partnerships.
+  Write it like a talent scout's brief — be specific and opinionated:
+  - Name the dominant color palette (e.g. "차분한 베이지-크림 톤", "채도 높은 네온 컬러")
+  - Identify the content style (e.g. "미니멀 플랫레이 중심", "스트릿 스냅 위주", "감성 카페 투어")
+  - State what kind of brand collaboration would fit (e.g. "클린뷰티/스킨케어 브랜드와 궁합이 좋을 피드", "스트리트 패션 브랜드 협업에 적합")
+  - If there's a weakness, mention it briefly (e.g. "다만 최근 포스팅 톤이 다소 흔들리는 편")
+  Do NOT use generic phrases like "일관된 톤과 독특한 미적 감각이 돋보이는 계정입니다" — be concrete.
 - A **vector** of 10 float values between 0 and 1 representing the aesthetic fingerprint:
   [warmth, saturation, contrast, minimalism, nature, urban, fashion, moody, bright, editorial]
 
@@ -48,16 +54,112 @@ Respond ONLY with valid JSON in this exact format:
 export async function analyzeAesthetics(
   feedData: FeedData
 ): Promise<AnalysisResult> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const googleApiKey = process.env.GOOGLE_API_KEY;
+  const openaiApiKey = process.env.OPENAI_API_KEY;
 
-  // If no API key, use mock scoring
-  if (!apiKey) {
-    return generateMockAnalysis(feedData);
+  // Priority: Gemini (free) > OpenAI (paid) > Mock
+  if (googleApiKey) {
+    return analyzeWithGemini(feedData, googleApiKey);
   }
 
+  if (openaiApiKey) {
+    return analyzeWithOpenAI(feedData, openaiApiKey);
+  }
+
+  return generateMockAnalysis(feedData);
+}
+
+// ─── Gemini 2.5 Flash (free tier) ──────────────────────────────
+
+async function analyzeWithGemini(
+  feedData: FeedData,
+  apiKey: string
+): Promise<AnalysisResult> {
+  const selectedPosts = selectRepresentativePosts(feedData.posts, 6);
+  const imageUrls = selectedPosts.map((post) => post.imageUrl);
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-05-20" });
+
+    // Fetch images and convert to inline data for Gemini
+    const imageParts = await Promise.all(
+      imageUrls.map(async (url) => {
+        try {
+          const res = await fetch(url);
+          const buffer = await res.arrayBuffer();
+          const base64 = Buffer.from(buffer).toString("base64");
+          const mimeType = res.headers.get("content-type") ?? "image/jpeg";
+          return {
+            inlineData: { data: base64, mimeType },
+          };
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    const validImageParts = imageParts.filter(
+      (p): p is NonNullable<typeof p> => p !== null
+    );
+
+    if (validImageParts.length === 0) {
+      console.error("[scoring-engine] No images could be fetched, falling back to mock");
+      return generateMockAnalysis(feedData);
+    }
+
+    const contextText = `Account: @${feedData.profile.handle}\nBio: ${feedData.profile.bio ?? "N/A"}\nFollowers: ${feedData.profile.followerCount}\nPosts analyzed: ${validImageParts.length}`;
+
+    const result = await model.generateContent([
+      ANALYSIS_PROMPT,
+      ...validImageParts,
+      contextText,
+    ]);
+
+    const text = result.response.text();
+    // Extract JSON from response (handle markdown code blocks)
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("No JSON found in Gemini response");
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    const metadataBoost = calculateMetadataBoost(feedData);
+
+    const scores: AestheticScores = {
+      overall: clampScore(parsed.overall * 0.85 + metadataBoost * 0.15),
+      color: clampScore(parsed.color),
+      composition: clampScore(parsed.composition),
+      toneConsistency: clampScore(parsed.toneConsistency),
+      trend: clampScore(parsed.trend * 0.8 + metadataBoost * 0.2),
+      styleOriginality: clampScore(parsed.styleOriginality),
+    };
+
+    const shortVector: number[] = parsed.vector ?? [];
+    const aestheticVector = padVector(shortVector, 512);
+
+    return {
+      scores,
+      representativeImages: imageUrls,
+      aestheticVector,
+      summary: parsed.summary ?? "",
+    };
+  } catch (error) {
+    console.error("[scoring-engine] Gemini analysis failed, falling back to mock:", error);
+    return generateMockAnalysis(feedData);
+  }
+}
+
+// ─── OpenAI GPT-4o (paid fallback) ────────────────────────────
+
+async function analyzeWithOpenAI(
+  feedData: FeedData,
+  apiKey: string
+): Promise<AnalysisResult> {
+  // Dynamic import to avoid bundling openai when not used
+  const OpenAI = (await import("openai")).default;
   const openai = new OpenAI({ apiKey });
 
-  // Select up to 6 representative images for Vision API (cost optimization)
   const selectedPosts = selectRepresentativePosts(feedData.posts, 6);
   const imageUrls = selectedPosts.map((post) => post.imageUrl);
 
@@ -88,13 +190,9 @@ export async function analyzeAesthetics(
     });
 
     const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("Empty AI response");
-    }
+    if (!content) throw new Error("Empty AI response");
 
     const parsed = JSON.parse(content);
-
-    // Apply metadata boost (engagement rate influence)
     const metadataBoost = calculateMetadataBoost(feedData);
 
     const scores: AestheticScores = {
@@ -106,7 +204,6 @@ export async function analyzeAesthetics(
       styleOriginality: clampScore(parsed.styleOriginality),
     };
 
-    // Pad vector to 512 dimensions for pgvector compatibility
     const shortVector: number[] = parsed.vector ?? [];
     const aestheticVector = padVector(shortVector, 512);
 
@@ -117,18 +214,18 @@ export async function analyzeAesthetics(
       summary: parsed.summary ?? "",
     };
   } catch (error) {
-    console.error("AI analysis failed, falling back to mock:", error);
+    console.error("[scoring-engine] OpenAI analysis failed, falling back to mock:", error);
     return generateMockAnalysis(feedData);
   }
 }
+
+// ─── Shared utilities ──────────────────────────────────────────
 
 function selectRepresentativePosts(
   posts: FeedPost[],
   count: number
 ): FeedPost[] {
   if (posts.length <= count) return posts;
-
-  // Select evenly spaced posts for representative sample
   const step = Math.floor(posts.length / count);
   return Array.from({ length: count }, (_, i) => posts[i * step]);
 }
@@ -137,7 +234,6 @@ function calculateMetadataBoost(feedData: FeedData): number {
   const { posts, profile } = feedData;
   if (posts.length === 0) return 50;
 
-  // Average engagement rate
   const totalEngagement = posts.reduce(
     (sum, post) => sum + post.likeCount + post.commentCount,
     0
@@ -145,12 +241,7 @@ function calculateMetadataBoost(feedData: FeedData): number {
   const avgEngagement = totalEngagement / posts.length;
   const engagementRate =
     profile.followerCount > 0 ? avgEngagement / profile.followerCount : 0;
-
-  // High engagement rate = higher trend/relevance score
-  // Typical good engagement: 3-6% for micro-influencers
   const engagementScore = Math.min(engagementRate * 1000, 100);
-
-  // Posting consistency bonus
   const postCount = posts.length;
   const consistencyBonus = postCount >= 12 ? 10 : (postCount / 12) * 10;
 
@@ -197,6 +288,40 @@ function generateMockAnalysis(feedData: FeedData): AnalysisResult {
     scores: { overall, color, composition, toneConsistency, trend, styleOriginality },
     representativeImages: feedData.posts.slice(0, 6).map((p) => p.imageUrl),
     aestheticVector: padVector(vector, 512),
-    summary: `@${handle}의 피드는 일관된 톤과 독특한 미적 감각이 돋보이는 계정입니다.`,
+    summary: generateMockSummary(feedData),
   };
+}
+
+function generateMockSummary(feedData: FeedData): string {
+  const { handle, followerCount } = feedData.profile;
+  const hashtags = feedData.posts.flatMap((p) => p.hashtags);
+  const hashtagSet = new Set(hashtags.map((h) => h.toLowerCase()));
+
+  const palettes = ["웜톤 베이지-브라운", "쿨톤 블루-그레이", "고채도 비비드 컬러", "무채색 모노톤", "파스텔 핑크-라벤더"];
+  const styles = ["미니멀 플랫레이 중심", "라이프스타일 스냅 위주", "감성 카페·공간 투어형", "OOTD 스트릿 스냅 중심", "제품 클로즈업 위주"];
+  const fits = [
+    "클린뷰티·스킨케어 브랜드와 궁합이 좋을 피드",
+    "F&B·카페 브랜드 협업에 적합한 분위기",
+    "스트리트 패션·스니커즈 브랜드에 어울리는 무드",
+    "리빙·인테리어 브랜드 콜라보에 적합",
+    "프리미엄 뷰티·향수 브랜드와 톤이 맞는 계정",
+  ];
+
+  const seed = handle.split("").reduce((acc, c) => acc * 31 + c.charCodeAt(0), 0);
+  const s = Math.abs(seed);
+
+  const palette = palettes[s % palettes.length];
+  const style = styles[(s * 7) % styles.length];
+  const fit = fits[(s * 13) % fits.length];
+
+  const sizeLabel = followerCount >= 100000 ? "매크로" : followerCount >= 10000 ? "마이크로" : "나노";
+
+  const hasFashion = hashtagSet.has("fashion") || hashtagSet.has("ootd") || hashtagSet.has("패션");
+  const hasFood = hashtagSet.has("food") || hashtagSet.has("cafe") || hashtagSet.has("맛집");
+
+  let detail = "";
+  if (hasFashion) detail = " 패션 콘텐츠 비중이 높아 의류·액세서리 캠페인에 즉시 활용 가능.";
+  else if (hasFood) detail = " 음식·공간 콘텐츠가 강점이라 F&B 브랜드 시딩에 효과적.";
+
+  return `${palette} 팔레트의 ${style}으로 구성된 ${sizeLabel} 인플루언서. ${fit}.${detail}`;
 }

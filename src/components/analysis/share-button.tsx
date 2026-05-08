@@ -16,6 +16,7 @@ interface ShareButtonProps {
     styleOriginality: number;
   };
   summary: string;
+  analysisId?: string | null;
 }
 
 export function ShareButton({
@@ -23,6 +24,7 @@ export function ShareButton({
   platform,
   scores,
   summary,
+  analysisId,
 }: ShareButtonProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "copied">("idle");
 
@@ -33,7 +35,7 @@ export function ShareButton({
       const response = await fetch("/api/share", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ handle, platform, scores, summary }),
+        body: JSON.stringify({ handle, platform, scores, summary, analysisId }),
       });
 
       const json = await response.json();

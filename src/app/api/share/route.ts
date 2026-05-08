@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { tryCreateClient } from "@/lib/supabase/server";
+import { setShareToken } from "@/lib/supabase/queries";
 
-/**
- * Creates a shareable link for an analysis result.
- * TODO: Save to Supabase and return real shareable URL.
- */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { handle, platform, scores, summary } = body;
+    const { handle, platform, scores, summary, analysisId } = body;
 
     if (!handle || !scores) {
       return NextResponse.json(
@@ -17,16 +15,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate share ID
-    // TODO: Store in Supabase shared_analyses table
-    const shareId = randomUUID().slice(0, 8);
+    const shareToken = randomUUID().slice(0, 8);
+
+    // Persist share_token to the analysis row (try-or-skip)
+    if (analysisId) {
+      const supabase = await tryCreateClient();
+      if (supabase) {
+        await setShareToken(supabase, analysisId, shareToken);
+      }
+    }
 
     const { origin } = new URL(request.url);
-    const shareUrl = `${origin}/share/${shareId}`;
+    const shareUrl = `${origin}/share/${shareToken}`;
 
     return NextResponse.json({
       data: {
-        shareId,
+        shareId: shareToken,
         shareUrl,
         meta: {
           title: `${handle}의 Aesthetic Score — VibeCheck`,

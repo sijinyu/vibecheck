@@ -1,123 +1,160 @@
-# VibeCheck — Claude Code Context
+# CLAUDE.md — VibeCheck
 
-## 프로젝트 개요
+## Project Overview
 
-인플루언서의 미적 감도(Aesthetic Vibe)를 AI로 정량화하고, 브랜드 톤과 자동 매칭하는 분석 도구.
+인스타그램 인플루언서의 피드 미학을 AI로 분석하여, 브랜드 마케터가 협업 대상을 평가할 수 있게 해주는 SaaS 도구.
 
 - **PRD**: `../PRD.md`
 - **Issues**: `../issues/` (12개 vertical slice, 모두 구현 완료)
 
-## 기술 스택
+## Tech Stack
 
-- **Framework**: Next.js 16 (App Router, React 19)
-- **Styling**: Tailwind CSS v4 + shadcn/ui (다크 모드, 핀터레스트 감성)
-- **Animation**: Framer Motion
+- **Framework**: Next.js 16 (App Router, Turbopack)
+- **UI**: React 19, Tailwind CSS 4, shadcn/ui, Framer Motion
 - **Charts**: Recharts (레이더 차트)
-- **Auth**: Supabase Auth (Google/Apple 소셜 로그인)
+- **Auth**: Supabase Auth (Google OAuth)
 - **DB**: Supabase PostgreSQL + pgvector (벡터 유사도 검색)
-- **AI**: OpenAI Vision API (GPT-4o) — 없으면 mock 데이터로 폴백
-- **Deploy**: Vercel (미설정)
+- **AI**: Gemini 2.5 Flash (primary, free) → OpenAI GPT-4o (paid fallback) → Mock
+- **Instagram Data**: RapidAPI Instagram Scraper Stable API (`thetechguy32744`)
 - **Package Manager**: pnpm
 
-## 주요 명령어
+## Commands
 
 ```bash
-pnpm dev          # 개발 서버 (localhost:3000)
-pnpm build        # 프로덕션 빌드
+pnpm dev          # localhost:3000
+pnpm build        # production build
 pnpm lint         # ESLint
 ```
 
-## 프로젝트 구조
+## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── page.tsx                    # 랜딩 페이지 (비로그인)
+│   ├── page.tsx                    # 랜딩 페이지
 │   ├── layout.tsx                  # 루트 레이아웃 (다크 모드)
 │   ├── middleware.ts               # Supabase 세션 + 보호 라우트
-│   ├── (auth)/login/               # 로그인 (Google/Apple)
+│   ├── (auth)/login/               # Google OAuth 로그인
 │   ├── (main)/                     # 인증된 사용자 영역
-│   │   ├── layout.tsx              # BottomNav + SignOut
 │   │   ├── analyze/page.tsx        # 핸들 분석 + Vibe Search
 │   │   ├── brand/page.tsx          # 브랜드 톤 등록
 │   │   ├── compare/page.tsx        # 인플루언서 비교
 │   │   └── dashboard/page.tsx      # 히스토리 + 즐겨찾기
 │   ├── api/
-│   │   ├── analyze/route.ts        # 통합 분석 (수집→AI→결과)
-│   │   ├── analyze/instagram/      # Instagram 어댑터 API
-│   │   ├── analyze/tiktok/         # TikTok 어댑터 API
-│   │   ├── brand/route.ts          # 브랜드 톤 분석
-│   │   ├── share/route.ts          # 공유 링크 생성
-│   │   └── vibe-search/route.ts    # 이미지 기반 매칭
+│   │   ├── analyze/route.ts        # 피드 수집 → AI 분석 → DB 저장
+│   │   ├── brand/route.ts          # 브랜드 톤 분석 → DB 저장
+│   │   ├── dashboard/route.ts      # 유저 분석 히스토리 조회
+│   │   ├── saved-influencers/route.ts  # 즐겨찾기 POST/DELETE
+│   │   ├── share/route.ts          # 공유 토큰 생성
+│   │   └── vibe-search/route.ts    # pgvector 유사도 검색
 │   ├── auth/callback/              # OAuth 콜백
 │   ├── auth/confirm/               # OTP 확인
-│   └── share/[id]/                 # 공유 결과 페이지
+│   └── share/[id]/                 # 공유 결과 페이지 (public)
 ├── components/
-│   ├── analysis/
-│   │   ├── aesthetic-radar-chart.tsx  # 5축 레이더 차트
-│   │   ├── profile-card.tsx          # 스코어 카드 + 차트 + 툴팁
-│   │   ├── share-button.tsx          # 공유 버튼 (클립보드 복사)
-│   │   └── vibe-search-upload.tsx    # 이미지 D&D 업로드 + 결과
-│   ├── auth/
-│   │   └── sign-out-button.tsx
-│   ├── layout/
-│   │   ├── bottom-nav.tsx            # 4탭 네비게이션 (애니메이션)
-│   │   └── page-transition.tsx       # Framer Motion 트랜지션
-│   └── ui/                           # shadcn/ui 컴포넌트
+│   ├── analysis/                   # 프로필카드, 레이더차트, 공유, Vibe Search
+│   ├── auth/                       # 로그아웃 버튼
+│   ├── layout/                     # BottomNav, 페이지 트랜지션
+│   └── ui/                         # shadcn/ui 컴포넌트
 ├── lib/
 │   ├── adapters/
-│   │   ├── types.ts                  # FeedPost, ProfileData, FeedData
-│   │   ├── instagram.ts             # Instagram 어댑터 (mock)
-│   │   └── tiktok.ts                # TikTok 어댑터 (mock)
+│   │   ├── instagram.ts            # RapidAPI 실제 연동 (mock fallback)
+│   │   ├── tiktok.ts               # TikTok 어댑터 (mock only)
+│   │   └── types.ts                # FeedData, FeedPost 타입
 │   ├── ai/
-│   │   ├── scoring-engine.ts        # OpenAI Vision + 하이브리드 스코어링
-│   │   └── cosine-similarity.ts     # 벡터 유사도 (Brand Fit)
-│   ├── supabase/
-│   │   ├── client.ts                # 브라우저 클라이언트
-│   │   ├── server.ts                # 서버 클라이언트
-│   │   ├── middleware.ts            # 세션 갱신 + 라우트 보호
-│   │   └── types.ts                 # DB 타입 정의
-│   └── utils.ts                     # cn() 유틸리티
-├── scripts/
-│   └── seed-crawler.ts              # 시드 데이터 크롤러 (50명)
+│   │   ├── scoring-engine.ts       # Gemini → OpenAI → Mock 우선순위
+│   │   └── cosine-similarity.ts    # 벡터 유사도 (Brand Fit)
+│   └── supabase/
+│       ├── client.ts               # 브라우저 클라이언트
+│       ├── server.ts               # 서버 클라이언트 + tryCreateClient()
+│       ├── queries.ts              # 타입드 쿼리 헬퍼 (upsert, insert, match)
+│       ├── middleware.ts           # 세션 갱신 + 라우트 보호
+│       └── types.ts                # Database, Analysis, Influencer 타입
 └── supabase/
     └── migrations/
-        └── 001_initial_schema.sql   # 전체 스키마 + RLS + pgvector
+        ├── 001_initial_schema.sql  # 테이블 + pgvector + RLS
+        └── 002_share_and_rls.sql   # share_token, RLS 보강, match_influencers RPC
 ```
 
-## 환경 변수 (.env.local)
+## Environment Variables
+
+`.env.local` 필요 (`.env.local.example` 참고):
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=       # Supabase 프로젝트 URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY=  # Supabase anon key
-SUPABASE_SERVICE_ROLE_KEY=      # (선택) 서버 admin 작업
-OPENAI_API_KEY=                 # (선택) 없으면 mock 데이터 사용
+# Supabase (필수)
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+# AI - Gemini 2.5 Flash (free tier, 필수)
+GOOGLE_API_KEY=
+
+# Instagram Data - RapidAPI (필수)
+RAPIDAPI_KEY=
+
+# AI - OpenAI (선택, paid fallback)
+OPENAI_API_KEY=
 ```
 
-**Supabase 미설정 시**: 미들웨어가 인증 체크를 스킵하여 모든 페이지 접근 가능. mock 데이터로 정상 동작.
+## Graceful Degradation (try-or-skip 패턴)
 
-## 현재 상태 (MVP 구현 완료)
+모든 외부 서비스 미설정 시에도 앱이 동작:
+- **Supabase 없음** → `tryCreateClient()` returns null, DB 저장 skip
+- **Gemini 없음** → OpenAI fallback → Mock fallback
+- **RapidAPI 없음** → Mock feed data
 
-- 12개 이슈 모두 코드 레벨 완료
-- 빌드 성공, 개발 서버 정상 (모든 라우트 200 OK)
-- 데이터 어댑터는 **mock 데이터** — 실제 API 연동은 TODO
-- Supabase DB 저장 로직은 TODO (API는 결과만 반환, 저장 미구현)
-- Vercel 배포 미설정
+## Supabase Setup
 
-## 다음 단계 (우선순위)
+### Tables
+- `influencers` — 분석된 인플루언서 프로필
+- `analyses` — 분석 결과 (scores, vector, summary, share_token)
+- `brand_profiles` — 브랜드 톤/무드 프로필
+- `vibe_searches` — Vibe Search 검색 기록
+- `saved_influencers` — 유저별 즐겨찾기
 
-1. Supabase 프로젝트 생성 + 마이그레이션 실행
-2. `.env.local` 설정 (Supabase + OpenAI)
-3. DB 저장 로직 연동 (분석 결과 → analyses/influencers 테이블)
-4. Vercel 배포
-5. 실제 Instagram/TikTok API 연동 (mock 교체)
-6. 시드 크롤러 실행
+### Migrations
+Supabase SQL Editor에서 순서대로 실행:
+1. `supabase/migrations/001_initial_schema.sql`
+2. `supabase/migrations/002_share_and_rls.sql`
 
-## 코딩 규칙
+### Google OAuth Setup
+1. Google Cloud Console → OAuth 2.0 Client ID 생성
+2. Authorized redirect URI: `https://<supabase-project>.supabase.co/auth/v1/callback`
+3. Supabase Dashboard → Authentication → Providers → Google → Client ID/Secret 입력
 
-- TypeScript strict, `any` 금지
+## Current Status
+
+### 완료
+- Google OAuth 로그인
+- 인스타 피드 수집 (RapidAPI 실제 연동)
+- AI 미학 분석 (Gemini 2.5 Flash 실제 연동)
+- 분석 결과 DB 저장 (Supabase)
+- 공유 링크 (share_token)
+- Vibe Search (pgvector 유사도, mock fallback)
+- Dashboard (히스토리 + 즐겨찾기)
+
+### Known Limitations
+1. **TikTok** — mock only
+2. **Compare** — UI만, AI 비교 분석 미구현
+3. **Brand moodboard** — 업로드 UI만, 이미지 처리 없음
+4. **Desktop** — 모바일 퍼스트, max-w-lg 고정
+5. **Toast** — 알림 시스템 없음
+
+### Planned Features
+- 퍼스널 브랜딩 컨설팅 탭 (AI 코칭)
+- 비교 분석 실제 AI 연동
+- PDF 리포트 다운로드
+- 트렌드 대시보드
+- 브랜드 ↔ 인플루언서 매칭
+- 즐겨찾기 계정 모니터링/알림
+- 전체 UI 퀄리티 상향 (상업용 수준)
+
+## Coding Conventions
+
+- TypeScript strict, `any` 최소화
 - 함수형 컴포넌트, immutable 패턴
 - Tailwind utility-first, 인라인 스타일 금지
 - 핸들러 네이밍: `handle{Target}{Event}` (예: handleFormSubmit)
 - 150줄 초과 시 hooks/컴포넌트 분리
+- API 에러 시 항상 mock fallback 제공
+- `console.error`는 `[module-name]` prefix 사용
 - 한국어 커뮤니케이션

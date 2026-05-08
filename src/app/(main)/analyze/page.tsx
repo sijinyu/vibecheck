@@ -18,6 +18,7 @@ interface AnalysisResultData {
   scores: AestheticScores;
   representativeImages: string[];
   summary: string;
+  analysisId: string | null;
 }
 
 type AnalyzeState =
@@ -258,6 +259,7 @@ export default function AnalyzePage() {
                 platform={state.result.profile.platform}
                 scores={state.result.scores}
                 summary={state.result.summary}
+                analysisId={state.result.analysisId}
               />
               <Button
                 variant="outline"

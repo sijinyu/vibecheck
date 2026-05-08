@@ -47,6 +47,8 @@ export interface Analysis {
   representative_images: string[];
   moodboard_urls: string[];
   raw_ai_response: Record<string, unknown> | null;
+  share_token: string | null;
+  summary: string | null;
   created_at: string;
 }
 
