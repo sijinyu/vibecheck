@@ -18,12 +18,24 @@
 - **Instagram Data**: RapidAPI Instagram Scraper Stable API (`thetechguy32744`)
 - **Package Manager**: pnpm
 
+## Deployment
+
+- **Hosting**: Vercel (Hobby Plan, Personal Account: `sijinyus-projects`)
+- **Production URL**: https://app-five-alpha-67.vercel.app
+- **Vercel Project**: `app` (`prj_0WFeZ1ieW6mlaPSoVcBbfeNATkhG`)
+- **환경 변수**: Vercel Dashboard에 5개 등록 완료 (Production)
+- **배포**: `vercel --prod` (app/ 디렉토리에서 실행)
+
+> Google OAuth 사용 시 Supabase Redirect URLs에 프로덕션 도메인 추가 필요:
+> `https://app-five-alpha-67.vercel.app/**`
+
 ## Commands
 
 ```bash
 pnpm dev          # localhost:3000
 pnpm build        # production build
 pnpm lint         # ESLint
+vercel --prod     # Vercel 프로덕션 배포
 ```
 
 ## Project Structure
@@ -131,6 +143,7 @@ Supabase SQL Editor에서 순서대로 실행:
 - 공유 링크 (share_token)
 - Vibe Search (pgvector 유사도, mock fallback)
 - Dashboard (히스토리 + 즐겨찾기)
+- Vercel 프로덕션 배포 완료
 
 ### Known Limitations
 1. **TikTok** — mock only
