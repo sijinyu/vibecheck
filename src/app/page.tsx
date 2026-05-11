@@ -6,30 +6,25 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProfileCard } from "@/components/analysis/profile-card";
 import { Sparkles, Eye, Palette, Search, ArrowRight } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LocaleToggle } from "@/components/locale-toggle";
+import { useI18n } from "@/lib/i18n/context";
 
-const features = [
-  {
-    icon: Eye,
-    title: "Aesthetic Score",
-    description: "인플루언서 피드를 AI가 분석하여 미적 감도를 0-100으로 정량화",
-  },
-  {
-    icon: Palette,
-    title: "Brand Fit Score",
-    description: "브랜드 톤과 인플루언서 스타일의 매칭도를 자동 산출",
-  },
-  {
-    icon: Search,
-    title: "Vibe Search",
-    description: "무드 이미지를 업로드하면 매칭되는 인플루언서를 추천",
-  },
-];
+const featureIcons = [Eye, Palette, Search] as const;
+const featureKeys = [
+  { title: "landing.feature.vibeScore.title", desc: "landing.feature.vibeScore.desc" },
+  { title: "landing.feature.brandMatching.title", desc: "landing.feature.brandMatching.desc" },
+  { title: "landing.feature.vibeSearch.title", desc: "landing.feature.vibeSearch.desc" },
+] as const;
 
 const demoData = {
   handle: "studio_muse",
   platform: "instagram" as const,
   displayName: "Studio Muse",
-  aestheticScore: 87,
+  aestheticScore: 85,
+  vibeScore: 87,
+  tier: "micro",
+  engagementRate: 0.042,
   scores: {
     color: 92,
     composition: 85,
@@ -38,6 +33,7 @@ const demoData = {
     brandFit: 91,
   },
   category: "Fashion & Lifestyle",
+  linkable: false,
 };
 
 const containerVariants: Variants = {
@@ -58,6 +54,8 @@ const itemVariants: Variants = {
 };
 
 export default function LandingPage() {
+  const { t } = useI18n();
+
   return (
     <motion.div
       className="flex min-h-screen flex-col"
@@ -65,6 +63,12 @@ export default function LandingPage() {
       initial="hidden"
       animate="visible"
     >
+      {/* Top bar */}
+      <div className="fixed right-4 top-4 z-50 flex items-center gap-1">
+        <LocaleToggle />
+        <ThemeToggle />
+      </div>
+
       {/* Hero */}
       <section className="flex flex-col items-center px-4 pt-20 pb-12">
         <motion.div
@@ -72,31 +76,30 @@ export default function LandingPage() {
           className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-primary"
         >
           <Sparkles className="h-3 w-3" />
-          AI-Powered Influencer Analysis
+          {t("landing.badge")}
         </motion.div>
 
         <motion.h1
           variants={itemVariants}
           className="mt-6 text-center text-4xl font-bold tracking-tight"
         >
-          숫자가 아닌
+          {t("landing.hero.line1")}
           <br />
-          <span className="text-primary">결</span>을 본다
+          <span className="text-primary">{t("landing.hero.accent")}</span>
+          {t("landing.hero.line1end")}
         </motion.h1>
 
         <motion.p
           variants={itemVariants}
           className="mt-4 max-w-xs text-center text-sm leading-relaxed text-muted-foreground"
         >
-          인플루언서의 미적 감도를 AI로 정량화하고,
-          <br />
-          브랜드 톤과 자동 매칭합니다
+          {t("landing.hero.desc")}
         </motion.p>
 
         <motion.div variants={itemVariants} className="mt-8">
           <Link href="/login">
             <Button size="lg" className="gap-2 px-6">
-              시작하기
+              {t("landing.cta")}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
@@ -107,7 +110,7 @@ export default function LandingPage() {
       <section className="mx-auto w-full max-w-lg px-4 pb-12">
         <motion.div variants={itemVariants}>
           <p className="mb-4 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Demo Analysis Result
+            {t("landing.demoLabel")}
           </p>
           <ProfileCard {...demoData} />
         </motion.div>
@@ -117,7 +120,7 @@ export default function LandingPage() {
       <section className="mx-auto w-full max-w-lg px-4 pb-12">
         <motion.div variants={itemVariants}>
           <p className="mb-4 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Representative Moodboard
+            {t("landing.moodboardLabel")}
           </p>
           <div className="grid grid-cols-3 gap-2">
             {[
@@ -146,25 +149,28 @@ export default function LandingPage() {
           variants={itemVariants}
           className="mb-4 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground"
         >
-          Key Features
+          {t("landing.featuresLabel")}
         </motion.p>
-        {features.map((feature) => (
-          <motion.div key={feature.title} variants={itemVariants}>
-            <Card className="border-border/50 bg-card/50 backdrop-blur">
-              <CardContent className="flex items-start gap-4 py-4">
-                <div className="shrink-0 rounded-lg bg-primary/10 p-2.5">
-                  <feature.icon className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{feature.title}</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                    {feature.description}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+        {featureKeys.map((feature, idx) => {
+          const Icon = featureIcons[idx];
+          return (
+            <motion.div key={feature.title} variants={itemVariants}>
+              <Card className="border-border/50 bg-card/50 backdrop-blur">
+                <CardContent className="flex items-start gap-4 py-4">
+                  <div className="shrink-0 rounded-lg bg-primary/10 p-2.5">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{t(feature.title)}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                      {t(feature.desc)}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
       </section>
 
       {/* Bottom CTA */}
@@ -172,12 +178,12 @@ export default function LandingPage() {
         <motion.div variants={itemVariants} className="text-center">
           <Link href="/login">
             <Button variant="outline" size="lg" className="gap-2">
-              무료로 시작하기
+              {t("landing.ctaFree")}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
           <p className="mt-3 text-xs text-muted-foreground/60">
-            가입 없이 데모를 먼저 경험해보세요
+            {t("landing.ctaDemo")}
           </p>
         </motion.div>
       </section>

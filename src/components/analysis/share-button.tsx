@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Share2, Check, Loader2 } from "lucide-react";
+import { useI18n } from "@/lib/i18n/context";
 
 interface ShareButtonProps {
   handle: string;
@@ -26,6 +28,7 @@ export function ShareButton({
   summary,
   analysisId,
 }: ShareButtonProps) {
+  const { t } = useI18n();
   const [status, setStatus] = useState<"idle" | "loading" | "copied">("idle");
 
   async function handleShare() {
@@ -43,9 +46,14 @@ export function ShareButton({
       if (response.ok && json.data?.shareUrl) {
         await navigator.clipboard.writeText(json.data.shareUrl);
         setStatus("copied");
+        toast.success(t("common.shareLinkCopied"));
         setTimeout(() => setStatus("idle"), 2000);
+      } else {
+        toast.error(t("common.shareLinkError"));
+        setStatus("idle");
       }
     } catch {
+      toast.error(t("common.shareLinkError"));
       setStatus("idle");
     }
   }
@@ -61,7 +69,7 @@ export function ShareButton({
       {status === "loading" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
       {status === "copied" && <Check className="h-3.5 w-3.5 text-primary" />}
       {status === "idle" && <Share2 className="h-3.5 w-3.5" />}
-      {status === "copied" ? "링크 복사됨" : "공유"}
+      {status === "copied" ? t("common.linkCopied") : t("common.share")}
     </Button>
   );
 }

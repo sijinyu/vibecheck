@@ -1,21 +1,30 @@
 "use client";
 
-import { useState, type FormEvent, type ChangeEvent } from "react";
+import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/layout/page-transition";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProfileCard } from "@/components/analysis/profile-card";
+import { VibeScoreBreakdown } from "@/components/analysis/vibe-score-breakdown";
+import { InsightsList } from "@/components/analysis/insights-list";
 import { Search, Loader2 } from "lucide-react";
 import { VibeSearchUpload } from "@/components/analysis/vibe-search-upload";
 import { ShareButton } from "@/components/analysis/share-button";
+import { DownloadReportButton } from "@/components/analysis/download-report-button";
+import Image from "next/image";
 import { type ProfileData } from "@/lib/adapters/types";
 import { type AestheticScores } from "@/lib/ai/scoring-engine";
+import { type VibeScoreResult } from "@/lib/ai/vibe-score-engine";
+import Link from "next/link";
+import { useI18n } from "@/lib/i18n/context";
 
 interface AnalysisResultData {
   profile: ProfileData;
   scores: AestheticScores;
+  vibeScore: VibeScoreResult;
   representativeImages: string[];
   summary: string;
   analysisId: string | null;
@@ -29,10 +38,36 @@ type AnalyzeState =
 
 type Platform = "instagram" | "tiktok";
 
+interface RecentAnalysis {
+  id: string;
+  handle: string;
+  platform: string;
+  vibeScore: number | null;
+  aestheticScore: number;
+}
+
 export default function AnalyzePage() {
+  const { t } = useI18n();
   const [handle, setHandle] = useState("");
   const [platform, setPlatform] = useState<Platform>("instagram");
   const [state, setState] = useState<AnalyzeState>({ status: "idle" });
+  const [recentAnalyses, setRecentAnalyses] = useState<RecentAnalysis[]>([]);
+
+  // Fetch recent analyses for discovery
+  useEffect(() => {
+    async function fetchRecent() {
+      try {
+        const res = await fetch("/api/dashboard");
+        const json = await res.json();
+        if (res.ok && json.data?.analyses) {
+          setRecentAnalyses(json.data.analyses.slice(0, 6));
+        }
+      } catch {
+        // Silently fail
+      }
+    }
+    fetchRecent();
+  }, []);
 
   async function handleFormSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -52,17 +87,19 @@ export default function AnalyzePage() {
       if (!response.ok) {
         setState({
           status: "error",
-          message: json.error?.message ?? "분석에 실패했습니다",
+          message: json.error?.message ?? t("analyze.error.default"),
         });
         return;
       }
 
       setState({ status: "success", result: json.data });
+      toast.success(t("analyze.success"));
     } catch {
       setState({
         status: "error",
-        message: "네트워크 오류가 발생했습니다",
+        message: t("common.error.network"),
       });
+      toast.error(t("common.error.network"));
     }
   }
 
@@ -82,13 +119,13 @@ export default function AnalyzePage() {
   const isLoading = state.status === "loading";
 
   return (
-    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12">
+    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-4xl lg:px-8">
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold tracking-tight">
           Vibe<span className="text-primary">Check</span>
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          숫자가 아닌 결을 본다
+          {t("analyze.title")}
         </p>
       </div>
 
@@ -120,8 +157,8 @@ export default function AnalyzePage() {
                 onChange={handleInputChange}
                 placeholder={
                   platform === "instagram"
-                    ? "인스타그램 핸들 입력 (예: studio_muse)"
-                    : "틱톡 핸들 입력 (예: vibe_creator)"
+                    ? t("analyze.placeholder.instagram")
+                    : t("analyze.placeholder.tiktok")
                 }
                 className="pl-10"
                 disabled={isLoading}
@@ -131,10 +168,10 @@ export default function AnalyzePage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  분석 중...
+                  {t("analyze.loading")}
                 </>
               ) : (
-                "분석하기"
+                t("analyze.submit")
               )}
             </Button>
           </form>
@@ -156,10 +193,10 @@ export default function AnalyzePage() {
                 <div className="h-12 w-12 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
                 <div className="text-center">
                   <p className="text-sm font-medium">
-                    @{state.handle} 분석 중
+                    @{state.handle} {t("analyze.loadingHandle")}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    피드 데이터를 수집하고 AI가 분석하고 있어요
+                    {t("analyze.loading.desc")}
                   </p>
                 </div>
               </CardContent>
@@ -186,7 +223,7 @@ export default function AnalyzePage() {
               className="w-full"
               onClick={handleRetry}
             >
-              다시 시도
+              {t("analyze.retry")}
             </Button>
           </motion.div>
         )}
@@ -205,6 +242,9 @@ export default function AnalyzePage() {
               platform={state.result.profile.platform}
               displayName={state.result.profile.displayName}
               aestheticScore={state.result.scores.overall}
+              vibeScore={state.result.vibeScore?.vibeScore}
+              tier={state.result.vibeScore?.tier}
+              engagementRate={state.result.vibeScore?.engagementRate}
               scores={{
                 color: state.result.scores.color,
                 composition: state.result.scores.composition,
@@ -213,6 +253,23 @@ export default function AnalyzePage() {
                 brandFit: state.result.scores.styleOriginality,
               }}
             />
+
+            {/* VibeScore Breakdown */}
+            {state.result.vibeScore && (
+              <VibeScoreBreakdown
+                aestheticScore={state.result.scores.overall}
+                engagementScore={state.result.vibeScore.engagementScore}
+                consistencyScore={state.result.vibeScore.consistencyScore}
+                growthPotentialScore={state.result.vibeScore.growthPotentialScore}
+                authenticityScore={state.result.vibeScore.authenticityScore}
+              />
+            )}
+
+            {/* AI Insights */}
+            {state.result.vibeScore?.insights &&
+              state.result.vibeScore.insights.length > 0 && (
+                <InsightsList insights={state.result.vibeScore.insights} />
+              )}
 
             {/* Summary */}
             {state.result.summary && (
@@ -229,7 +286,7 @@ export default function AnalyzePage() {
             {state.result.representativeImages.length > 0 && (
               <div>
                 <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Representative Feed
+                  {t("analyze.representativeFeed")}
                 </p>
                 <div className="grid grid-cols-3 gap-1.5">
                   {state.result.representativeImages.map((url, i) => (
@@ -238,14 +295,15 @@ export default function AnalyzePage() {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.05 }}
-                      className="aspect-square overflow-hidden rounded-lg bg-muted"
+                      className="relative aspect-square overflow-hidden rounded-lg bg-muted"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={url}
                         alt={`Feed ${i + 1}`}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 33vw, 200px"
+                        unoptimized
                       />
                     </motion.div>
                   ))}
@@ -261,24 +319,72 @@ export default function AnalyzePage() {
                 summary={state.result.summary}
                 analysisId={state.result.analysisId}
               />
+              <DownloadReportButton
+                handle={state.result.profile.handle}
+                platform={state.result.profile.platform}
+                displayName={state.result.profile.displayName}
+                scores={state.result.scores}
+                vibeScore={state.result.vibeScore}
+                summary={state.result.summary}
+              />
               <Button
                 variant="outline"
                 className="flex-1"
                 onClick={handleRetry}
               >
-                새로운 핸들 분석
+                {t("analyze.newHandle")}
               </Button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Vibe Search section (idle only) */}
+      {/* Discovery sections (idle only) */}
       {state.status === "idle" && (
         <>
+          {/* Recent Analyses */}
+          {recentAnalyses.length > 0 && (
+            <div className="mt-8">
+              <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {t("analyze.recentTitle")}
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {recentAnalyses.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/influencer/${item.handle}`}
+                    className="shrink-0"
+                  >
+                    <Card className="w-32 border-border/50 bg-card/50 transition-colors hover:bg-card/80">
+                      <CardContent className="px-3 py-2.5">
+                        <p className="truncate text-xs font-medium">
+                          @{item.handle}
+                        </p>
+                        <p
+                          className={`mt-0.5 text-lg font-bold tabular-nums ${
+                            (item.vibeScore ?? item.aestheticScore) >= 80
+                              ? "text-primary"
+                              : (item.vibeScore ?? item.aestheticScore) >= 60
+                                ? "text-accent"
+                                : "text-muted-foreground"
+                          }`}
+                        >
+                          {item.vibeScore ?? item.aestheticScore}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {item.vibeScore ? "VibeScore" : "Aesthetic"}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="relative my-8 flex items-center">
             <div className="flex-1 border-t border-border/50" />
-            <span className="px-4 text-xs text-muted-foreground">또는</span>
+            <span className="px-4 text-xs text-muted-foreground">{t("analyze.or")}</span>
             <div className="flex-1 border-t border-border/50" />
           </div>
 

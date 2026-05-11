@@ -6,6 +6,9 @@ export interface FeedPost {
   likeCount: number;
   commentCount: number;
   timestamp: string;
+  shareCount?: number;
+  playCount?: number;
+  postType?: "image" | "video" | "carousel" | "reel";
 }
 
 export interface ProfileData {

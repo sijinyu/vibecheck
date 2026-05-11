@@ -15,12 +15,26 @@ export async function upsertInfluencer(
     profile_image_url?: string | null;
     bio?: string | null;
     follower_count?: number | null;
+    following_count?: number | null;
     aesthetic_vector?: number[] | null;
     aesthetic_score?: number | null;
     color_score?: number | null;
     composition_score?: number | null;
     tone_consistency_score?: number | null;
     trend_score?: number | null;
+    vibe_score?: number | null;
+    engagement_score?: number | null;
+    consistency_score?: number | null;
+    growth_potential_score?: number | null;
+    authenticity_score?: number | null;
+    tier?: string | null;
+    avg_likes_per_post?: number | null;
+    avg_comments_per_post?: number | null;
+    engagement_rate?: number | null;
+    posting_frequency_days?: number | null;
+    top_hashtags?: string[];
+    content_categories?: string[];
+    insights?: Record<string, unknown>[] | null;
     category?: string | null;
     representative_images?: string[];
   }
@@ -59,6 +73,12 @@ export async function insertAnalysis(
     tone_consistency_score?: number | null;
     trend_score?: number | null;
     brand_fit_score?: number | null;
+    vibe_score?: number | null;
+    engagement_score?: number | null;
+    consistency_score?: number | null;
+    growth_potential_score?: number | null;
+    authenticity_score?: number | null;
+    engagement_rate?: number | null;
     representative_images?: string[];
     raw_ai_response?: Record<string, unknown> | null;
     summary?: string | null;
@@ -146,6 +166,8 @@ export async function upsertBrandProfile(
     platform?: "instagram" | "tiktok" | null;
     tone_vector?: number[] | null;
     description?: string | null;
+    preferred_tiers?: string[];
+    target_categories?: string[];
   }
 ): Promise<boolean> {
   const { error } = await client

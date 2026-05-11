@@ -58,7 +58,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Not logged in and trying to access protected routes
-  const protectedRoutes = ["/analyze", "/brand", "/dashboard", "/compare"];
+  const protectedRoutes = ["/analyze", "/brand", "/dashboard", "/compare", "/influencer"];
   const isProtected = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   );

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useRef, type DragEvent, type ChangeEvent } from "react";
+import { useState, useRef, useEffect, type DragEvent, type ChangeEvent } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ImagePlus, Loader2, X } from "lucide-react";
+import { useI18n } from "@/lib/i18n/context";
 
 interface MatchedInfluencer {
   id: string;
@@ -23,11 +25,20 @@ type SearchState =
   | { status: "error"; message: string };
 
 export function VibeSearchUpload() {
+  const { t } = useI18n();
   const [previews, setPreviews] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [state, setState] = useState<SearchState>({ status: "idle" });
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Revoke object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      previews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleDragOver(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
@@ -55,6 +66,8 @@ export function VibeSearchUpload() {
   }
 
   function addFiles(newFiles: File[]) {
+    // Revoke old previews before creating new ones
+    previews.forEach((url) => URL.revokeObjectURL(url));
     const combined = [...files, ...newFiles].slice(0, 5);
     setFiles(combined);
     const newPreviews = combined.map((f) => URL.createObjectURL(f));
@@ -62,6 +75,8 @@ export function VibeSearchUpload() {
   }
 
   function handleRemoveImage(index: number) {
+    // Revoke the removed preview URL
+    URL.revokeObjectURL(previews[index]);
     const newFiles = files.filter((_, i) => i !== index);
     const newPreviews = previews.filter((_, i) => i !== index);
     setFiles(newFiles);
@@ -91,14 +106,14 @@ export function VibeSearchUpload() {
       if (!response.ok) {
         setState({
           status: "error",
-          message: json.error?.message ?? "검색에 실패했습니다",
+          message: json.error?.message ?? t("vibeSearch.error"),
         });
         return;
       }
 
       setState({ status: "success", results: json.data.results });
     } catch {
-      setState({ status: "error", message: "네트워크 오류가 발생했습니다" });
+      setState({ status: "error", message: t("common.error.network") });
     }
   }
 
@@ -133,9 +148,9 @@ export function VibeSearchUpload() {
               <ImagePlus className="h-6 w-6 text-primary" />
             </div>
             <div className="text-center">
-              <p className="text-sm font-medium">Vibe Search</p>
+              <p className="text-sm font-medium">{t("vibeSearch.title")}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                무드 이미지를 드래그하거나 클릭하여 업로드
+                {t("vibeSearch.desc")}
               </p>
             </div>
           </div>
@@ -144,11 +159,12 @@ export function VibeSearchUpload() {
             <div className="grid grid-cols-3 gap-2">
               {previews.map((preview, i) => (
                 <div key={i} className="group/img relative aspect-square">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={preview}
                     alt={`Upload ${i + 1}`}
-                    className="h-full w-full rounded-lg object-cover"
+                    fill
+                    className="rounded-lg object-cover"
+                    unoptimized
                   />
                   <button
                     type="button"
@@ -164,7 +180,7 @@ export function VibeSearchUpload() {
               ))}
             </div>
             <p className="mt-2 text-center text-xs text-muted-foreground">
-              {previews.length}/5 이미지 · 클릭하여 추가
+              {previews.length}/5 {t("vibeSearch.imageCount")}
             </p>
           </div>
         )}
@@ -180,10 +196,10 @@ export function VibeSearchUpload() {
           {state.status === "loading" ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              매칭 중...
+              {t("vibeSearch.searching")}
             </>
           ) : (
-            "매칭 인플루언서 찾기"
+            t("vibeSearch.search")
           )}
         </Button>
       )}
@@ -206,7 +222,7 @@ export function VibeSearchUpload() {
             className="space-y-2"
           >
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              매칭 인플루언서 ({state.results.length}명)
+              {t("vibeSearch.results")} ({state.results.length})
             </p>
             {state.results.map((influencer, i) => (
               <motion.div
@@ -218,7 +234,7 @@ export function VibeSearchUpload() {
                 <Card className="cursor-pointer border-border/50 bg-card/50 transition-colors hover:bg-card/80">
                   <CardContent className="flex items-center gap-3 py-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                      {influencer.displayName.charAt(0)}
+                      {(influencer.displayName ?? influencer.handle).charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">
@@ -232,7 +248,7 @@ export function VibeSearchUpload() {
                       <p className="text-lg font-bold tabular-nums text-primary">
                         {influencer.matchScore}%
                       </p>
-                      <p className="text-xs text-muted-foreground">매칭</p>
+                      <p className="text-xs text-muted-foreground">{t("vibeSearch.match")}</p>
                     </div>
                   </CardContent>
                 </Card>

@@ -124,14 +124,13 @@ async function analyzeWithGemini(
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    const metadataBoost = calculateMetadataBoost(feedData);
 
     const scores: AestheticScores = {
-      overall: clampScore(parsed.overall * 0.85 + metadataBoost * 0.15),
+      overall: clampScore(parsed.overall),
       color: clampScore(parsed.color),
       composition: clampScore(parsed.composition),
       toneConsistency: clampScore(parsed.toneConsistency),
-      trend: clampScore(parsed.trend * 0.8 + metadataBoost * 0.2),
+      trend: clampScore(parsed.trend),
       styleOriginality: clampScore(parsed.styleOriginality),
     };
 
@@ -193,14 +192,13 @@ async function analyzeWithOpenAI(
     if (!content) throw new Error("Empty AI response");
 
     const parsed = JSON.parse(content);
-    const metadataBoost = calculateMetadataBoost(feedData);
 
     const scores: AestheticScores = {
-      overall: clampScore(parsed.overall * 0.85 + metadataBoost * 0.15),
+      overall: clampScore(parsed.overall),
       color: clampScore(parsed.color),
       composition: clampScore(parsed.composition),
       toneConsistency: clampScore(parsed.toneConsistency),
-      trend: clampScore(parsed.trend * 0.8 + metadataBoost * 0.2),
+      trend: clampScore(parsed.trend),
       styleOriginality: clampScore(parsed.styleOriginality),
     };
 
@@ -219,6 +217,130 @@ async function analyzeWithOpenAI(
   }
 }
 
+// ─── Moodboard Analysis (Brand) ──────────────────────────────
+
+const MOODBOARD_PROMPT = `You are an expert brand identity analyst.
+Analyze the following moodboard images and extract the brand's visual identity.
+
+Score each dimension from 0-100:
+1. **color** — Color harmony, palette consistency, saturation balance
+2. **composition** — Visual balance, rule of thirds, leading lines, framing
+3. **toneConsistency** — How consistent the visual tone is across all images
+4. **trend** — How well the visual style aligns with current design trends
+5. **styleOriginality** — Uniqueness of the brand's visual identity
+
+Also provide:
+- An **overall** brand aesthetic score (0-100)
+- A **summary** in Korean (2-3 sentences) describing the brand's visual identity:
+  - Name the dominant color palette
+  - Identify the visual style direction
+  - Suggest what type of influencer would match this brand
+- A **vector** of 10 float values between 0 and 1:
+  [warmth, saturation, contrast, minimalism, nature, urban, fashion, moody, bright, editorial]
+
+Respond ONLY with valid JSON:
+{
+  "overall": number,
+  "color": number,
+  "composition": number,
+  "toneConsistency": number,
+  "trend": number,
+  "styleOriginality": number,
+  "summary": "string",
+  "vector": [number, ...]
+}`;
+
+export async function analyzeMoodboard(
+  imageBuffers: { data: string; mimeType: string }[]
+): Promise<AnalysisResult> {
+  const googleApiKey = process.env.GOOGLE_API_KEY;
+
+  if (googleApiKey && imageBuffers.length > 0) {
+    return analyzeMoodboardWithGemini(imageBuffers, googleApiKey);
+  }
+
+  return generateMockMoodboardAnalysis();
+}
+
+async function analyzeMoodboardWithGemini(
+  imageBuffers: { data: string; mimeType: string }[],
+  apiKey: string
+): Promise<AnalysisResult> {
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash-preview-05-20",
+    });
+
+    const imageParts = imageBuffers.map((img) => ({
+      inlineData: { data: img.data, mimeType: img.mimeType },
+    }));
+
+    const result = await model.generateContent([
+      MOODBOARD_PROMPT,
+      ...imageParts,
+      `Moodboard images: ${imageParts.length} images provided for brand identity analysis.`,
+    ]);
+
+    const text = result.response.text();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("No JSON found in Gemini response");
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    const scores: AestheticScores = {
+      overall: clampScore(parsed.overall),
+      color: clampScore(parsed.color),
+      composition: clampScore(parsed.composition),
+      toneConsistency: clampScore(parsed.toneConsistency),
+      trend: clampScore(parsed.trend),
+      styleOriginality: clampScore(parsed.styleOriginality),
+    };
+
+    const shortVector: number[] = parsed.vector ?? [];
+    const aestheticVector = padVector(shortVector, 512);
+
+    return {
+      scores,
+      representativeImages: [],
+      aestheticVector,
+      summary: parsed.summary ?? "",
+    };
+  } catch (error) {
+    console.error(
+      "[scoring-engine] Moodboard Gemini analysis failed, falling back to mock:",
+      error
+    );
+    return generateMockMoodboardAnalysis();
+  }
+}
+
+function generateMockMoodboardAnalysis(): AnalysisResult {
+  const seed = Date.now() % 10000;
+  const color = 70 + (seed % 25);
+  const composition = 65 + ((seed * 7) % 30);
+  const toneConsistency = 75 + ((seed * 13) % 20);
+  const trend = 65 + ((seed * 17) % 25);
+  const styleOriginality = 60 + ((seed * 23) % 30);
+  const overall = Math.round(
+    color * 0.2 + composition * 0.2 + toneConsistency * 0.25 + trend * 0.15 + styleOriginality * 0.2
+  );
+
+  const vector = Array.from({ length: 10 }, (_, i) =>
+    Number(((seed * (i + 1) * 0.1) % 1).toFixed(3))
+  );
+
+  return {
+    scores: { overall, color, composition, toneConsistency, trend, styleOriginality },
+    representativeImages: [],
+    aestheticVector: padVector(vector, 512),
+    summary:
+      "웜톤 베이지-테라코타 팔레트를 기반으로 한 미니멀하면서도 따뜻한 브랜드 무드. 자연광과 오가닉 텍스처를 활용한 감성 콘텐츠 제작에 적합한 인플루언서와 궁합이 좋을 것으로 분석됩니다.",
+  };
+}
+
 // ─── Shared utilities ──────────────────────────────────────────
 
 function selectRepresentativePosts(
@@ -228,24 +350,6 @@ function selectRepresentativePosts(
   if (posts.length <= count) return posts;
   const step = Math.floor(posts.length / count);
   return Array.from({ length: count }, (_, i) => posts[i * step]);
-}
-
-function calculateMetadataBoost(feedData: FeedData): number {
-  const { posts, profile } = feedData;
-  if (posts.length === 0) return 50;
-
-  const totalEngagement = posts.reduce(
-    (sum, post) => sum + post.likeCount + post.commentCount,
-    0
-  );
-  const avgEngagement = totalEngagement / posts.length;
-  const engagementRate =
-    profile.followerCount > 0 ? avgEngagement / profile.followerCount : 0;
-  const engagementScore = Math.min(engagementRate * 1000, 100);
-  const postCount = posts.length;
-  const consistencyBonus = postCount >= 12 ? 10 : (postCount / 12) * 10;
-
-  return Math.min(engagementScore + consistencyBonus, 100);
 }
 
 function clampScore(value: number): number {

@@ -1,4 +1,5 @@
 import { type Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { PageTransition } from "@/components/layout/page-transition";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { ExternalLink } from "lucide-react";
 import { tryCreateClient } from "@/lib/supabase/server";
 import { getAnalysisByShareToken } from "@/lib/supabase/queries";
 import { type Analysis } from "@/lib/supabase/types";
+import { getScoreGrade } from "@/lib/score-utils";
 
 interface SharePageProps {
   params: Promise<{ id: string }>;
@@ -18,13 +20,7 @@ async function fetchSharedAnalysis(shareToken: string): Promise<Analysis | null>
   return getAnalysisByShareToken(supabase, shareToken);
 }
 
-function getGrade(score: number): string {
-  if (score >= 90) return "S";
-  if (score >= 80) return "A";
-  if (score >= 70) return "B";
-  if (score >= 60) return "C";
-  return "D";
-}
+const getGrade = getScoreGrade;
 
 export async function generateMetadata({
   params,
@@ -33,11 +29,13 @@ export async function generateMetadata({
   const analysis = await fetchSharedAnalysis(id);
 
   if (analysis) {
+    const displayScore = analysis.vibe_score ?? analysis.aesthetic_score;
+    const scoreLabel = analysis.vibe_score ? "VibeScore" : "Aesthetic Score";
     return {
-      title: `@${analysis.handle} Aesthetic Score — VibeCheck`,
-      description: analysis.summary ?? `Aesthetic Score: ${analysis.aesthetic_score}/100`,
+      title: `@${analysis.handle} ${scoreLabel} — VibeCheck`,
+      description: analysis.summary ?? `${scoreLabel}: ${displayScore}/100`,
       openGraph: {
-        title: `@${analysis.handle} — Aesthetic Score ${analysis.aesthetic_score}`,
+        title: `@${analysis.handle} — ${scoreLabel} ${displayScore}`,
         description: analysis.summary ?? `분석 결과를 확인해보세요.`,
         type: "website",
       },
@@ -49,7 +47,7 @@ export async function generateMetadata({
     description: `VibeCheck에서 공유된 인플루언서 분석 결과입니다.`,
     openGraph: {
       title: `인플루언서 분석 결과 — VibeCheck`,
-      description: `Aesthetic Score를 확인해보세요. (ID: ${id})`,
+      description: `VibeScore를 확인해보세요. (ID: ${id})`,
       type: "website",
     },
   };
@@ -88,14 +86,25 @@ export default async function SharePage({ params }: SharePageProps) {
     );
   }
 
-  const grade = getGrade(analysis.aesthetic_score);
-  const scores = [
-    { label: "색감", value: analysis.color_score },
-    { label: "구도", value: analysis.composition_score },
-    { label: "톤 일관성", value: analysis.tone_consistency_score },
-    { label: "트렌드", value: analysis.trend_score },
-    { label: "브랜드 적합", value: analysis.brand_fit_score },
-  ];
+  const displayScore = analysis.vibe_score ?? analysis.aesthetic_score;
+  const grade = getGrade(displayScore);
+  const hasVibeScore = analysis.vibe_score != null;
+
+  const scores = hasVibeScore
+    ? [
+        { label: "미적", value: analysis.aesthetic_score },
+        { label: "참여도", value: analysis.engagement_score },
+        { label: "일관성", value: analysis.consistency_score },
+        { label: "성장성", value: analysis.growth_potential_score },
+        { label: "진정성", value: analysis.authenticity_score },
+      ]
+    : [
+        { label: "색감", value: analysis.color_score },
+        { label: "구도", value: analysis.composition_score },
+        { label: "톤 일관성", value: analysis.tone_consistency_score },
+        { label: "트렌드", value: analysis.trend_score },
+        { label: "브랜드 적합", value: analysis.brand_fit_score },
+      ];
 
   return (
     <PageTransition className="mx-auto flex min-h-screen w-full max-w-lg flex-col items-center px-4 pt-12">
@@ -123,10 +132,10 @@ export default async function SharePage({ params }: SharePageProps) {
             </div>
             <div className="ml-auto text-right">
               <p className="text-3xl font-bold tabular-nums text-primary">
-                {analysis.aesthetic_score}
+                {displayScore}
               </p>
               <p className="text-xs font-medium text-muted-foreground">
-                Grade {grade}
+                {hasVibeScore ? "VibeScore" : "Aesthetic"} · Grade {grade}
               </p>
             </div>
           </div>
@@ -159,14 +168,15 @@ export default async function SharePage({ params }: SharePageProps) {
               {analysis.representative_images.map((url, i) => (
                 <div
                   key={i}
-                  className="aspect-square overflow-hidden rounded-lg bg-muted"
+                  className="relative aspect-square overflow-hidden rounded-lg bg-muted"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={url}
                     alt={`Feed ${i + 1}`}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 33vw, 200px"
+                    unoptimized
                   />
                 </div>
               ))}
