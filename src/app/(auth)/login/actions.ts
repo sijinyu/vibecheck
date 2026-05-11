@@ -2,25 +2,18 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { headers } from "next/headers";
 
-function getOrigin(headersList: Headers): string {
-  const origin = headersList.get("origin");
-  if (origin) return origin;
-
-  const host = headersList.get("x-forwarded-host") ?? headersList.get("host");
-  if (host) {
-    const protocol = host.includes("localhost") ? "http" : "https";
-    return `${protocol}://${host}`;
+function getOrigin(): string {
+  // 환경변수가 있으면 무조건 사용 (프로덕션에서 확실한 도메인 보장)
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
   }
-
   return "http://localhost:3000";
 }
 
 export async function signInWithGoogle() {
   const supabase = await createClient();
-  const headersList = await headers();
-  const origin = getOrigin(headersList);
+  const origin = getOrigin();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -40,8 +33,7 @@ export async function signInWithGoogle() {
 
 export async function signInWithApple() {
   const supabase = await createClient();
-  const headersList = await headers();
-  const origin = getOrigin(headersList);
+  const origin = getOrigin();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "apple",
