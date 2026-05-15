@@ -584,11 +584,11 @@ export default function InfluencerProfilePage({
                     <span className="text-2xl">{trendIcon}</span>
                     <div>
                       <p className="text-sm font-medium">
-                        {data.trend_direction === "rising" ? "상승 트렌드" : data.trend_direction === "declining" ? "하락 트렌드" : "안정"}
+                        {data.trend_direction === "rising" ? t("influencer.trendRising") : data.trend_direction === "declining" ? t("influencer.trendDeclining") : t("influencer.trendStable")}
                       </p>
                       {data.trend_magnitude != null && data.trend_magnitude > 0 && (
                         <p className="text-xs text-muted-foreground">
-                          최근 인게이지먼트 {data.trend_magnitude}% {data.trend_direction === "rising" ? "증가" : data.trend_direction === "declining" ? "감소" : "변동"}
+                          {t("influencer.trendEngagement")} {data.trend_magnitude}% {data.trend_direction === "rising" ? t("influencer.trendUp") : data.trend_direction === "declining" ? t("influencer.trendDown") : t("influencer.trendFlat")}
                         </p>
                       )}
                     </div>

@@ -372,6 +372,16 @@ const translations = {
 
   // Common
   "common.delete": { ko: "삭제", en: "Delete" },
+
+  // Influencer detail
+  "influencer.trendRising": { ko: "상승 트렌드", en: "Rising Trend" },
+  "influencer.trendDeclining": { ko: "하락 트렌드", en: "Declining Trend" },
+  "influencer.trendStable": { ko: "안정", en: "Stable" },
+  "influencer.trendEngagement": { ko: "최근 인게이지먼트", en: "Recent engagement" },
+  "influencer.trendUp": { ko: "증가", en: "increase" },
+  "influencer.trendDown": { ko: "감소", en: "decrease" },
+  "influencer.trendFlat": { ko: "변동", en: "change" },
+
   "common.share": { ko: "공유", en: "Share" },
   "common.linkCopied": { ko: "링크 복사됨", en: "Link Copied" },
   "common.pdfReport": { ko: "PDF 리포트", en: "PDF Report" },
