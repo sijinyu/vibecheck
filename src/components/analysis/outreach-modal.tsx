@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/context";
 
 interface OutreachModalProps {
   open: boolean;
@@ -42,6 +43,7 @@ export function OutreachModal({
   influencerPlatform = "instagram",
   preSelectedBrandId,
 }: OutreachModalProps) {
+  const { t } = useI18n();
   const [step, setStep] = useState<Step>(
     preSelectedBrandId ? "generating" : "select-brand"
   );
@@ -106,12 +108,12 @@ export function OutreachModal({
           setResult(json.data as OutreachResult);
           setStep("result");
         } else {
-          toast.error(json.error?.message ?? "아웃리치 생성에 실패했습니다");
+          toast.error(json.error?.message ?? t("outreach.generateFailed"));
           setStep("select-brand");
         }
       })
       .catch(() => {
-        toast.error("아웃리치 생성에 실패했습니다");
+        toast.error(t("outreach.generateFailed"));
         setStep("select-brand");
       });
   }, [step, selectedBrandId, influencerHandle, influencerPlatform]);
@@ -119,7 +121,7 @@ export function OutreachModal({
   function handleCopy(text: string, field: string) {
     navigator.clipboard.writeText(text).catch(() => {});
     setCopiedField(field);
-    toast.success("복사되었습니다");
+    toast.success(t("outreach.copied"));
     setTimeout(() => setCopiedField(null), 2000);
   }
 
@@ -139,7 +141,7 @@ export function OutreachModal({
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-primary" />
-            <h2 className="text-base font-semibold">아웃리치 메시지</h2>
+            <h2 className="text-base font-semibold">{t("outreach.title")}</h2>
             <span className="text-sm text-muted-foreground">
               @{influencerHandle}
             </span>
@@ -147,7 +149,7 @@ export function OutreachModal({
           <button
             onClick={() => onOpenChange(false)}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label="닫기"
+            aria-label={t("outreach.close")}
           >
             ✕
           </button>
@@ -159,7 +161,7 @@ export function OutreachModal({
             {brands.length > 0 ? (
               <>
                 <p className="mb-3 text-xs text-muted-foreground">
-                  아웃리치를 보낼 브랜드를 선택하세요
+                  {t("outreach.selectBrand")}
                 </p>
                 {brands.map((brand) => (
                   <button
@@ -182,14 +184,14 @@ export function OutreachModal({
               <div className="py-6 text-center">
                 <Building2 className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
                 <p className="text-sm font-medium">
-                  아웃리치를 위해 브랜드 등록이 필요합니다
+                  {t("outreach.noBrand")}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  브랜드를 등록하면 맞춤 아웃리치 메시지를 생성할 수 있습니다
+                  {t("outreach.noBrandDesc")}
                 </p>
                 <Link href="/brands/new" onClick={() => onOpenChange(false)}>
                   <Button className="mt-4" size="sm">
-                    브랜드 등록하기
+                    {t("outreach.registerBrand")}
                   </Button>
                 </Link>
               </div>
@@ -202,10 +204,10 @@ export function OutreachModal({
           <div className="flex flex-col items-center gap-3 py-10">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">
-              @{influencerHandle}에게 보낼 맞춤 메시지를 생성하고 있습니다...
+              {t("outreach.generating").replace("{handle}", influencerHandle)}
             </p>
             <p className="text-[11px] text-muted-foreground/60">
-              AI가 브랜드와 인플루언서 정보를 분석 중입니다
+              {t("outreach.generatingDesc")}
             </p>
           </div>
         )}
@@ -217,9 +219,9 @@ export function OutreachModal({
             <div className="mb-4 flex gap-1 rounded-lg bg-muted/50 p-1">
               {(
                 [
-                  { key: "dm" as const, label: "DM 템플릿" },
-                  { key: "proposal" as const, label: "협업 제안서" },
-                  { key: "points" as const, label: "협상 포인트" },
+                  { key: "dm" as const, label: t("outreach.tabDm") },
+                  { key: "proposal" as const, label: t("outreach.tabProposal") },
+                  { key: "points" as const, label: t("outreach.tabPoints") },
                 ] as const
               ).map((tab) => (
                 <button
@@ -280,7 +282,7 @@ export function OutreachModal({
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}
-              {copiedField === activeTab ? "복사됨!" : "복사하기"}
+              {copiedField === activeTab ? t("outreach.copiedBtn") : t("outreach.copyBtn")}
             </Button>
 
             {/* Re-generate with different brand */}
@@ -291,7 +293,7 @@ export function OutreachModal({
               }}
               className="mt-2 w-full text-center text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
-              다른 브랜드로 다시 생성
+              {t("outreach.regenerate")}
             </button>
           </div>
         )}

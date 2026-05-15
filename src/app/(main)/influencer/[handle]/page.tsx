@@ -380,7 +380,7 @@ export default function InfluencerProfilePage({
             className="shrink-0 gap-1.5"
           >
             <MessageSquare className="h-3.5 w-3.5" />
-            아웃리치
+            {t("outreach.button")}
           </Button>
           <DownloadReportButton
             handle={data.handle}

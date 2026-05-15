@@ -394,6 +394,25 @@ const translations = {
   "common.pdfError": { ko: "PDF 생성에 실패했습니다", en: "PDF generation failed" },
   "common.sortByRecent": { ko: "점수순 정렬", en: "Sort by score" },
   "common.sortByScore": { ko: "최신순 정렬", en: "Sort by recent" },
+
+  // Outreach
+  "outreach.button": { ko: "아웃리치", en: "Outreach" },
+  "outreach.title": { ko: "아웃리치 메시지", en: "Outreach Message" },
+  "outreach.close": { ko: "닫기", en: "Close" },
+  "outreach.selectBrand": { ko: "아웃리치를 보낼 브랜드를 선택하세요", en: "Select a brand for outreach" },
+  "outreach.noBrand": { ko: "아웃리치를 위해 브랜드 등록이 필요합니다", en: "Brand registration required for outreach" },
+  "outreach.noBrandDesc": { ko: "브랜드를 등록하면 맞춤 아웃리치 메시지를 생성할 수 있습니다", en: "Register a brand to generate custom outreach messages" },
+  "outreach.registerBrand": { ko: "브랜드 등록하기", en: "Register Brand" },
+  "outreach.generating": { ko: "@{handle}에게 보낼 맞춤 메시지를 생성하고 있습니다...", en: "Generating custom message for @{handle}..." },
+  "outreach.generatingDesc": { ko: "AI가 브랜드와 인플루언서 정보를 분석 중입니다", en: "AI is analyzing brand and influencer data" },
+  "outreach.generateFailed": { ko: "아웃리치 생성에 실패했습니다", en: "Failed to generate outreach" },
+  "outreach.tabDm": { ko: "DM 템플릿", en: "DM Template" },
+  "outreach.tabProposal": { ko: "협업 제안서", en: "Proposal" },
+  "outreach.tabPoints": { ko: "협상 포인트", en: "Talking Points" },
+  "outreach.copyBtn": { ko: "복사하기", en: "Copy" },
+  "outreach.copiedBtn": { ko: "복사됨!", en: "Copied!" },
+  "outreach.copied": { ko: "복사되었습니다", en: "Copied to clipboard" },
+  "outreach.regenerate": { ko: "다른 브랜드로 다시 생성", en: "Regenerate with different brand" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
