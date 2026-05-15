@@ -358,11 +358,10 @@ Supabase SQL Editor에서 순서대로 실행:
 - **[Phase 2]** 아웃리치 모달 전체 i18n — 17개 번역 키 (DM 템플릿, 협업 제안서, 협상 포인트 탭 등)
 - **[Phase 2]** 인플루언서 상세 트렌드 i18n — 상승/하락/안정, 인게이지먼트 증감
 - **[Phase 2]** 대시보드 전체 i18n — 삭제/즐겨찾기 해제/전체 삭제 등 하드코딩 한국어 제거
-- **i18n 번역 키** — ~320개+ (ko/en 완전 지원)
 - **[Phase 2] UI/UX Polish** — grid card i18n 12키 추가, pb-24 제거(9파일), 태블릿 md:grid-cols-2 반응형, skeleton-card.tsx 스켈레톤 로더(3곳), 아웃리치 모달 AnimatePresence 애니메이션
 - **[Steve Jobs Audit] Sprint 1** — 가짜 벤치마크 제거 (getLikesBenchmark 실제 데이터), 랜딩 거짓말 3종 수정 (Vibe Search·무드보드 제거, CTA 정직화), 로그인 실패 에러 표시, _debug 필드 제거, stub 인플루언서 필터링 (curated/category-counts), NaN 점수 전파 방지 (clampScore unknown→50)
 - **[Steve Jobs Audit] Sprint 2** — 매칭 qualityFilter smoothStep 완화, mega 최저 보장 55→40, 모바일 삭제/해제 버튼 항상 표시, 전체삭제 AlertDialog 확인, 브랜드삭제 AlertDialog, 로그인 약관 underline 제거, iPhone safe-area-inset-bottom + viewport-fit:cover
-- **i18n 번역 키** — ~343개 (ko/en, benchmark 5키 + dashboard AlertDialog 4키 + login error 2키 추가)
+- **i18n 번역 키** — ~343개 (ko/en)
 
 ### Known Issues (미수정)
 - `SupabaseClient<any>` 타입 체크 무효화 (queries.ts)
