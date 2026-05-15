@@ -22,7 +22,6 @@ import {
   Target,
   Tag,
   Users,
-  Megaphone,
   MessageSquare,
 } from "lucide-react";
 import { OutreachModal } from "@/components/analysis/outreach-modal";
@@ -50,7 +49,7 @@ const CATEGORY_OPTIONS = [
 
 // ─── Types ───────────────────────────────────────────────────
 
-type Tab = "overview" | "recommendations" | "saved" | "analytics" | "coaching" | "campaigns" | "settings";
+type Tab = "overview" | "recommendations" | "coaching" | "settings";
 
 interface BrandData {
   id: string;
@@ -180,7 +179,7 @@ export default function BrandDetailPage({
         setEditTiers(data.preferred_tiers ?? []);
         setEditCategories(data.target_categories ?? []);
       } else {
-        toast.error(json.error?.message ?? "브랜드 정보를 불러올 수 없습니다");
+        toast.error(json.error?.message ?? t("common.error.network"));
       }
     } catch {
       toast.error(t("common.error.network"));
@@ -344,7 +343,7 @@ export default function BrandDetailPage({
         </div>
         <Card className="border-border/50 bg-card/50">
           <CardContent className="py-16 text-center text-sm text-muted-foreground">
-            브랜드를 찾을 수 없습니다
+            {t("brands.notFound")}
           </CardContent>
         </Card>
       </PageTransition>
@@ -359,7 +358,7 @@ export default function BrandDetailPage({
     { key: "overview", label: t("brands.tab.overview"), icon: <Target className="h-3.5 w-3.5" /> },
     { key: "recommendations", label: t("brands.tab.recommendations"), icon: <Sparkles className="h-3.5 w-3.5" /> },
     { key: "coaching", label: t("brands.tab.coaching"), icon: <GraduationCap className="h-3.5 w-3.5" /> },
-    { key: "campaigns", label: t("brands.tab.campaigns"), icon: <Megaphone className="h-3.5 w-3.5" /> },
+    // campaigns tab hidden until persistence and end-to-end flow are complete
     { key: "settings", label: t("brands.tab.settings"), icon: <Settings className="h-3.5 w-3.5" /> },
   ];
 
@@ -671,39 +670,7 @@ export default function BrandDetailPage({
         </motion.div>
       )}
 
-      {/* ──────────── Tab: Campaigns ──────────── */}
-      {tab === "campaigns" && (
-        <motion.div
-          key="campaigns"
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-          className="space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">{t("brands.campaigns.title")}</h3>
-            <Link href={`/brands/${brandId}/campaigns`}>
-              <Button size="sm" variant="outline" className="gap-1.5 text-xs">
-                <Megaphone className="h-3.5 w-3.5" />
-                {t("brands.campaigns.manage")}
-              </Button>
-            </Link>
-          </div>
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground">
-                {t("brands.campaigns.desc")}
-              </p>
-              <Link href={`/brands/${brandId}/campaigns/new`}>
-                <Button className="mt-4 gap-1.5" size="sm">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  {t("brands.campaigns.create")}
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
+      {/* Campaigns tab hidden — persistence and end-to-end flow incomplete */}
 
       {/* ──────────── Tab: Coaching ──────────── */}
       {tab === "coaching" && (

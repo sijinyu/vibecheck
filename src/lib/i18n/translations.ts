@@ -208,6 +208,7 @@ const translations = {
   "brands.title": { ko: "내 브랜드", en: "My Brands" },
   "brands.subtitle": { ko: "브랜드를 관리하고 인플루언서 매칭을 받아보세요", en: "Manage brands and get influencer matching" },
   "brands.addBrand": { ko: "브랜드 추가", en: "Add Brand" },
+  "brands.notFound": { ko: "브랜드를 찾을 수 없습니다", en: "Brand not found" },
   "brands.empty": { ko: "등록된 브랜드가 없습니다", en: "No brands registered yet" },
   "brands.emptyDesc": { ko: "첫 번째 브랜드를 등록하고 인플루언서 매칭을 시작하세요", en: "Register your first brand to start influencer matching" },
   "brands.savedInfluencers": { ko: "저장된 인플루언서", en: "Saved Influencers" },

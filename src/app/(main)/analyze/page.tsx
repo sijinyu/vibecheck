@@ -11,7 +11,6 @@ import { ProfileCard } from "@/components/analysis/profile-card";
 import { VibeScoreBreakdown } from "@/components/analysis/vibe-score-breakdown";
 import { InsightsList } from "@/components/analysis/insights-list";
 import { Search, Loader2, TrendingUp, Sparkles, Zap, Crown, Hash, Heart, MessageCircle, Building2 } from "lucide-react";
-import { VibeSearchUpload } from "@/components/analysis/vibe-search-upload";
 import { ShareButton } from "@/components/analysis/share-button";
 import { DownloadReportButton } from "@/components/analysis/download-report-button";
 import { InfluencerGridCard } from "@/components/analysis/influencer-grid-card";
@@ -929,13 +928,7 @@ export default function AnalyzePage() {
             </DiscoverSection>
           )}
 
-          <div className="relative my-8 flex items-center">
-            <div className="flex-1 border-t border-border/50" />
-            <span className="px-4 text-xs text-muted-foreground">{t("analyze.or")}</span>
-            <div className="flex-1 border-t border-border/50" />
-          </div>
-
-          <VibeSearchUpload />
+          {/* Vibe Search — hidden until backend vector analysis is implemented */}
 
           {/* Browse / Filter Section */}
           <div className="mt-10" id="browse-section">

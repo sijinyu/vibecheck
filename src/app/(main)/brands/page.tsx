@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { PageTransition } from "@/components/layout/page-transition";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,7 +37,7 @@ export default function BrandsPage() {
         setBrands(json.data);
       }
     } catch {
-      // silently fail
+      toast.error(t("common.error.network"));
     } finally {
       setLoading(false);
     }
