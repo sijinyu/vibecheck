@@ -561,17 +561,52 @@ export default function BrandDetailPage({
             </Card>
           )}
 
-          {!loadingRecs && recommendations.length === 0 && (
-            <Card className="border-border/50 bg-card/50">
-              <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-                <div className="rounded-xl bg-muted/50 p-4">
-                  <Sparkles className="h-7 w-7 text-muted-foreground" />
-                </div>
-                <p className="text-sm font-medium">{t("brand.noMatches")}</p>
-                <p className="text-xs text-muted-foreground">{t("brand.noMatchesDesc")}</p>
-              </CardContent>
-            </Card>
-          )}
+          {!loadingRecs && recommendations.length === 0 && (() => {
+            const createdMinutesAgo = (Date.now() - new Date(brand.created_at).getTime()) / 60_000;
+            const isDiscovering = createdMinutesAgo < 10;
+            return (
+              <Card className="border-border/50 bg-card/50">
+                <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
+                  {isDiscovering ? (
+                    <>
+                      <div className="rounded-xl bg-primary/10 p-4">
+                        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                      </div>
+                      <p className="text-sm font-medium">{t("brands.rec.discovering")}</p>
+                      <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
+                        {t("brands.rec.discoveringDesc")}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 gap-1.5"
+                        onClick={() => { setRecsFetched(false); fetchRecommendations(); }}
+                      >
+                        <Loader2 className="h-3 w-3" />
+                        {t("brands.rec.refresh")}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="rounded-xl bg-muted/50 p-4">
+                        <Sparkles className="h-7 w-7 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm font-medium">{t("brand.noMatches")}</p>
+                      <p className="text-xs text-muted-foreground">{t("brand.noMatchesDesc")}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 gap-1.5"
+                        onClick={() => { setRecsFetched(false); fetchRecommendations(); }}
+                      >
+                        {t("common.retry")}
+                      </Button>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {!loadingRecs && recommendations.length > 0 && (
             <>

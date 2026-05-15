@@ -257,6 +257,9 @@ const translations = {
   "brands.rec.count": { ko: "명", en: "" },
   "brands.rec.avgVibe": { ko: "평균 VibeScore", en: "Avg VibeScore" },
   "brands.rec.outreach": { ko: "아웃리치", en: "Outreach" },
+  "brands.rec.discovering": { ko: "인플루언서를 탐색하고 있어요", en: "Discovering influencers..." },
+  "brands.rec.discoveringDesc": { ko: "AI가 브랜드에 어울리는 인플루언서를 찾고 있습니다. 보통 1~2분 정도 소요됩니다.", en: "AI is finding influencers that match your brand. This usually takes 1-2 minutes." },
+  "brands.rec.refresh": { ko: "새로고침", en: "Refresh" },
 
   // Brand campaigns
   "brands.campaigns.title": { ko: "캠페인 관리", en: "Campaign Management" },
