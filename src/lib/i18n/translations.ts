@@ -297,6 +297,11 @@ const translations = {
   "recCard.saved": { ko: "저장됨", en: "Saved" },
   "recCard.save": { ko: "저장", en: "Save" },
   "recCard.detail": { ko: "상세보기", en: "Detail" },
+  "recCard.reasonTone": { ko: "브랜드 톤 일치 {pct}%", en: "Brand tone match {pct}%" },
+  "recCard.reason.tier": { ko: "선호 티어 부합", en: "Preferred tier match" },
+  "recCard.reason.category": { ko: "타겟 카테고리 매칭", en: "Target category match" },
+  "recCard.reason.authenticity": { ko: "높은 오디언스 진정성", en: "High audience authenticity" },
+  "recCard.reason.overall": { ko: "종합 점수 기반 추천", en: "Overall score recommendation" },
 
   // Discovery
   "discover.browseTitle": { ko: "인플루언서 브라우징", en: "Browse Influencers" },

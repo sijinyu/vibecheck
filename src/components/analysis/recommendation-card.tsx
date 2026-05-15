@@ -12,7 +12,6 @@ import {
   Sparkles,
   ImageOff,
   Plus,
-  MessageSquare,
 } from "lucide-react";
 import { InfluencerTierBadge } from "./influencer-tier-badge";
 import { getScoreColor } from "@/lib/score-utils";
@@ -70,6 +69,20 @@ function getPlatformLabel(platform: string): string {
   if (platform === "instagram") return "IG";
   if (platform === "tiktok") return "TT";
   return platform.toUpperCase().slice(0, 2);
+}
+
+// ─── Match Reason Renderer ──────────────────────────────────────────────────
+
+function renderMatchReasons(reasonCodes: string, t: (key: string) => string): string {
+  return reasonCodes.split(" · ").map((code) => {
+    if (code.startsWith("tone:")) {
+      const pct = code.split(":")[1];
+      return t("recCard.reasonTone").replace("{pct}", pct);
+    }
+    const key = `recCard.reason.${code}` as Parameters<typeof t>[0];
+    const translated = t(key);
+    return translated !== key ? translated : code;
+  }).join(" · ");
 }
 
 // ─── Trend Icon ─────────────────────────────────────────────────────────────
@@ -177,6 +190,7 @@ export function RecommendationCard({
   tier,
   engagementRate,
   followerCount,
+  matchReason,
   oneLiner,
   contentCategories,
   topHashtags,
@@ -240,18 +254,16 @@ export function RecommendationCard({
         )}
       </div>
 
-      {/* ── Row 3: AI suggestion reason (if available) ── */}
-      {aiSuggestionReason && (
-        <div className="flex items-start gap-1.5 rounded-lg border border-primary/10 bg-primary/5 px-2.5 py-1.5">
-          <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-primary/60" />
-          <p className="text-[11px] leading-relaxed text-primary/80 line-clamp-2">
-            {aiSuggestionReason}
-          </p>
-        </div>
-      )}
+      {/* ── Row 3: Match reason (always shown) ── */}
+      <div className="flex items-start gap-1.5 rounded-lg border border-primary/10 bg-primary/5 px-2.5 py-1.5">
+        <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary/60" />
+        <p className="text-[11px] leading-relaxed text-primary/80 line-clamp-2">
+          {aiSuggestionReason ?? renderMatchReasons(matchReason, t as (key: string) => string)}
+        </p>
+      </div>
 
       {/* ── Row 3b: One-liner AI summary ── */}
-      {oneLiner && !aiSuggestionReason && (
+      {oneLiner && (
         <p className="text-xs leading-relaxed text-muted-foreground/90 line-clamp-2">
           &ldquo;{oneLiner}&rdquo;
         </p>

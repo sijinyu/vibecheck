@@ -138,15 +138,15 @@ export function calculateMatchScores(
         : status === "light" ? "medium"
         : "low";
 
-      // Generate match reason
+      // Generate match reason codes (i18n-ready)
       const reasons: string[] = [];
-      if (aestheticMatch >= 70) reasons.push("브랜드 톤 일치도 " + Math.round(aestheticMatch) + "%");
+      if (aestheticMatch >= 70) reasons.push(`tone:${Math.round(aestheticMatch)}`);
       if (tierCompatibility === 100 && brand.preferredTiers.length > 0)
-        reasons.push("선호 티어에 부합");
+        reasons.push("tier");
       if (categoryAlignment >= 60 && brand.targetCategories.length > 0)
-        reasons.push("타겟 카테고리 매칭");
-      if (authenticity >= 80) reasons.push("높은 오디언스 진정성");
-      if (reasons.length === 0) reasons.push("종합 점수 기반 추천");
+        reasons.push("category");
+      if (authenticity >= 80) reasons.push("authenticity");
+      if (reasons.length === 0) reasons.push("overall");
 
       return {
         influencerId: inf.id,
