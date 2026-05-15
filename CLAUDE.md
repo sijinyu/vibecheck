@@ -117,7 +117,7 @@ src/
 │   │   ├── brand/page.tsx          # → /brands 리다이렉트
 │   │   ├── brands/page.tsx         # 멀티 브랜드 리스트
 │   │   ├── brands/new/page.tsx     # 브랜드 신규 등록
-│   │   ├── brands/[brandId]/page.tsx  # 브랜드 상세 (5탭: 개요/AI추천/코칭/캠페인/설정)
+│   │   ├── brands/[brandId]/page.tsx  # 브랜드 상세 (4탭: 개요/AI추천/코칭/설정, 캠페인 숨김)
 │   │   ├── brands/[brandId]/campaigns/  # 캠페인 관리 (리스트/상세/생성)
 │   │   ├── compare/page.tsx        # 인플루언서 2-3명 비교
 │   │   ├── dashboard/page.tsx      # KPI + 차트 + 히스토리 + 즐겨찾기 + 날짜 필터 + CSV
@@ -197,7 +197,7 @@ src/
 │   │   └── cosine-similarity.ts    # 벡터 유사도
 │   ├── i18n/
 │   │   ├── context.tsx             # I18nProvider + useI18n() hook
-│   │   └── translations.ts        # ko/en 번역 키 (~260개)
+│   │   └── translations.ts        # ko/en 번역 키 (~320개)
 │   ├── export/
 │   │   └── csv-generator.ts       # CSV 내보내기 (분석 히스토리, 저장된 인플루언서)
 │   ├── pdf/
@@ -349,6 +349,16 @@ Supabase SQL Editor에서 순서대로 실행:
 - **브랜드 UX 개선** — 리스트 카드 정보 강화, 탭 정리 (6→5), 전체 i18n 적용, 프로필 이미지 렌더링 수정
 - **프로필 이미지 수정** — profile-card.tsx, recommendation-card.tsx에 Image 렌더링 + fallback 구현
 - **참여율 툴팁** — 공식 + 티어 벤치마크 표시
+- **[Phase 1 Surgery]** Vibe Search UI 숨김 (mock vector 백엔드), 캠페인 탭 숨김 (persistence 미완성)
+- **[Phase 1]** brands/page.tsx silent fail → toast.error 에러 표시로 수정
+- **[Phase 1]** 추천 "분석 중" 상태 — 브랜드 생성 후 10분 이내 discovering 애니메이션 + 새로고침 버튼
+- **[Phase 1]** 신규 유저 온보딩 가이드 — 대시보드 빈 상태에서 환영 카드 + 2단계 안내 (브랜드 등록 → 인플루언서 검색)
+- **[Phase 2]** 추천 카드 매칭 이유 항상 표시 — matchReason i18n 코드 생성 + 프론트 번역 렌더링, aiSuggestionReason 우선 표시
+- **[Phase 2]** 매칭 엔진 i18n — 하드코딩 한국어 제거, reason code 기반 (tone/tier/category/authenticity/overall)
+- **[Phase 2]** 아웃리치 모달 전체 i18n — 17개 번역 키 (DM 템플릿, 협업 제안서, 협상 포인트 탭 등)
+- **[Phase 2]** 인플루언서 상세 트렌드 i18n — 상승/하락/안정, 인게이지먼트 증감
+- **[Phase 2]** 대시보드 전체 i18n — 삭제/즐겨찾기 해제/전체 삭제 등 하드코딩 한국어 제거
+- **i18n 번역 키** — ~320개+ (ko/en 완전 지원)
 
 ### Known Issues (미수정)
 - `SupabaseClient<any>` 타입 체크 무효화 (queries.ts)
@@ -356,11 +366,22 @@ Supabase SQL Editor에서 순서대로 실행:
 - 인메모리 rate limiter는 Vercel serverless 인스턴스별 독립 → best-effort
 - Gemini free tier 일일 할당량 제한 (2.5-flash 20RPD, 2.0-flash 1500RPD)
 - Food 카테고리 인플루언서 시딩 실패 (핸들 데이터 부족)
+- Vibe Search 백엔드 미구현 (mock vector — UI 숨김 처리됨)
+- 캠페인 관리 persistence 미완성 (UI 숨김 처리됨)
+- analyze/page.tsx 디스커버리 데이터 fetch에 7곳 silent fail 존재 (영향 미미)
+
+### Hidden Features (미완성으로 숨김 처리)
+- **Vibe Search** — `vibe-search-upload.tsx` 존재하나 백엔드가 mock vector, UI에서 제거
+- **캠페인 탭** — `brands/[brandId]/campaigns/` 라우트 존재하나 브랜드 상세 탭에서 숨김
+- 캠페인 라우트 직접 접근은 가능 (`/brands/{id}/campaigns`)
 
 ### Planned Features
 - 즐겨찾기 계정 모니터링/알림
 - AI 추정 오디언스 데모그래픽
 - 스토리/하이라이트 데이터 수집
+- 인플루언서 100명+ 시딩 (Cold Start 해결, Gemini 할당량 의존)
+- Vibe Search 실제 벡터 분석 구현
+- 캠페인 관리 완성 (persistence + end-to-end flow)
 
 ## Coding Conventions
 
