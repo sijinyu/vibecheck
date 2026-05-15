@@ -348,8 +348,25 @@ const translations = {
   "dashboard.dateRange.all": { ko: "전체", en: "All" },
   "dashboard.csvDownload": { ko: "CSV 다운로드", en: "Download CSV" },
   "dashboard.csvSuccess": { ko: "CSV 파일이 다운로드되었습니다", en: "CSV file downloaded" },
+  "dashboard.deleted": { ko: "분석 기록이 삭제되었습니다", en: "Analysis deleted" },
+  "dashboard.allDeleted": { ko: "모든 분석 기록이 삭제되었습니다", en: "All analyses deleted" },
+  "dashboard.deleteFailed": { ko: "삭제에 실패했습니다", en: "Failed to delete" },
+  "dashboard.unsaved": { ko: "즐겨찾기가 해제되었습니다", en: "Removed from favorites" },
+  "dashboard.unsaveFailed": { ko: "해제에 실패했습니다", en: "Failed to remove" },
+  "dashboard.unsaveLabel": { ko: "즐겨찾기 해제", en: "Remove from favorites" },
+  "dashboard.clearAll": { ko: "전체 삭제", en: "Clear all" },
+  "dashboard.emptyHistoryDesc": { ko: "첫 인플루언서를 분석해보세요", en: "Analyze your first influencer" },
+
+  // Onboarding
+  "onboarding.welcome": { ko: "VibeCheck에 오신 것을 환영합니다", en: "Welcome to VibeCheck" },
+  "onboarding.welcomeDesc": { ko: "AI가 인플루언서의 피드를 분석하고, 브랜드에 딱 맞는 크리에이터를 추천해드립니다. 아래 단계를 따라 시작하세요.", en: "AI analyzes influencer feeds and recommends creators that match your brand. Follow the steps below to get started." },
+  "onboarding.step1Title": { ko: "브랜드 등록하기", en: "Register Your Brand" },
+  "onboarding.step1Desc": { ko: "브랜드 이름과 인스타그램 핸들만 입력하면 AI가 자동으로 분석하고 맞춤 인플루언서를 추천합니다.", en: "Just enter your brand name and Instagram handle — AI will analyze and recommend matching influencers." },
+  "onboarding.step2Title": { ko: "인플루언서 검색하기", en: "Search Influencers" },
+  "onboarding.step2Desc": { ko: "인플루언서 핸들을 검색하면 VibeScore 5차원 분석, 콘텐츠 인사이트, 브랜드 핏을 확인할 수 있습니다.", en: "Search any influencer handle to see their 5-dimensional VibeScore, content insights, and brand fit." },
 
   // Common
+  "common.delete": { ko: "삭제", en: "Delete" },
   "common.share": { ko: "공유", en: "Share" },
   "common.linkCopied": { ko: "링크 복사됨", en: "Link Copied" },
   "common.pdfReport": { ko: "PDF 리포트", en: "PDF Report" },

@@ -20,6 +20,9 @@ import {
   Download,
   Trash2,
   X,
+  Palette,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import { getScoreColor } from "@/lib/score-utils";
@@ -133,12 +136,12 @@ export default function DashboardPage() {
       });
       if (res.ok) {
         setHistory((prev) => prev.filter((item) => item.id !== id));
-        toast.success("분석 기록이 삭제되었습니다");
+        toast.success(t("dashboard.deleted"));
       } else {
-        toast.error("삭제에 실패했습니다");
+        toast.error(t("dashboard.deleteFailed"));
       }
     } catch {
-      toast.error("삭제에 실패했습니다");
+      toast.error(t("dashboard.deleteFailed"));
     } finally {
       setDeletingIds((prev) => {
         const next = new Set(prev);
@@ -160,12 +163,12 @@ export default function DashboardPage() {
       });
       if (res.ok) {
         setHistory([]);
-        toast.success("모든 분석 기록이 삭제되었습니다");
+        toast.success(t("dashboard.allDeleted"));
       } else {
-        toast.error("삭제에 실패했습니다");
+        toast.error(t("dashboard.deleteFailed"));
       }
     } catch {
-      toast.error("삭제에 실패했습니다");
+      toast.error(t("dashboard.deleteFailed"));
     } finally {
       setDeletingIds(new Set());
     }
@@ -183,12 +186,12 @@ export default function DashboardPage() {
       });
       if (res.ok) {
         setSaved((prev) => prev.filter((item) => item.influencerId !== influencerId));
-        toast.success("즐겨찾기가 해제되었습니다");
+        toast.success(t("dashboard.unsaved"));
       } else {
-        toast.error("해제에 실패했습니다");
+        toast.error(t("dashboard.unsaveFailed"));
       }
     } catch {
-      toast.error("해제에 실패했습니다");
+      toast.error(t("dashboard.unsaveFailed"));
     } finally {
       setUnsavingIds((prev) => {
         const next = new Set(prev);
@@ -271,7 +274,71 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {!loading && (
+      {!loading && history.length === 0 && saved.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="space-y-4"
+        >
+          {/* Onboarding Hero */}
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-card/50 to-card/50">
+            <CardContent className="flex flex-col items-center gap-5 py-12 text-center">
+              <div className="rounded-2xl bg-primary/10 p-5">
+                <Sparkles className="h-10 w-10 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">{t("onboarding.welcome")}</h2>
+                <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                  {t("onboarding.welcomeDesc")}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Step Cards */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link href="/brands/new">
+              <Card className="group cursor-pointer border-border/50 bg-card/50 transition-all hover:bg-card/80 hover:border-primary/30 hover:shadow-sm">
+                <CardContent className="flex items-start gap-4 p-5">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg font-bold text-primary">
+                    1
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold">{t("onboarding.step1Title")}</p>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/30 transition-all group-hover:text-primary group-hover:translate-x-0.5" />
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      {t("onboarding.step1Desc")}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link href="/analyze">
+              <Card className="group cursor-pointer border-border/50 bg-card/50 transition-all hover:bg-card/80 hover:border-primary/30 hover:shadow-sm">
+                <CardContent className="flex items-start gap-4 p-5">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted/50 text-lg font-bold text-muted-foreground">
+                    2
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold">{t("onboarding.step2Title")}</p>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/30 transition-all group-hover:text-primary group-hover:translate-x-0.5" />
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      {t("onboarding.step2Desc")}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </motion.div>
+      )}
+
+      {!loading && (history.length > 0 || saved.length > 0) && (
         <div className="space-y-6">
           {/* KPI Cards */}
           {stats && (
@@ -333,7 +400,7 @@ export default function DashboardPage() {
                 onClick={handleClearAllHistory}
               >
                 <Trash2 className="h-3 w-3" />
-                전체 삭제
+                {t("dashboard.clearAll")}
               </Button>
             )}
           </div>
@@ -388,7 +455,7 @@ export default function DashboardPage() {
                             onClick={(e) => handleDeleteAnalysis(item.id, e)}
                             disabled={deletingIds.has(item.id)}
                             className="shrink-0 rounded-full p-1.5 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                            aria-label="삭제"
+                            aria-label={t("common.delete")}
                           >
                             {deletingIds.has(item.id) ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -412,7 +479,7 @@ export default function DashboardPage() {
                         {t("dashboard.emptyHistory")}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        첫 인플루언서를 분석해보세요
+                        {t("dashboard.emptyHistoryDesc")}
                       </p>
                     </div>
                     <Link href="/analyze">
@@ -482,7 +549,7 @@ export default function DashboardPage() {
                             onClick={(e) => handleUnsave(item.influencerId, e)}
                             disabled={unsavingIds.has(item.influencerId)}
                             className="shrink-0 rounded-full p-1.5 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                            aria-label="즐겨찾기 해제"
+                            aria-label={t("dashboard.unsaveLabel")}
                           >
                             {unsavingIds.has(item.influencerId) ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
