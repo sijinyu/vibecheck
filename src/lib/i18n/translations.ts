@@ -189,6 +189,10 @@ const translations = {
 
   // Profile Card
   "profileCard.engagementRate": { ko: "참여율", en: "ER" },
+  "profileCard.engagementRateTip": {
+    ko: "(좋아요 + 댓글×2) ÷ 팔로워 수. 티어별 평균: nano 4.5%, micro 2.8%, mid 1.8%, macro 1.3%, mega 0.8%",
+    en: "(Likes + Comments×2) ÷ Followers. Tier avg: nano 4.5%, micro 2.8%, mid 1.8%, macro 1.3%, mega 0.8%",
+  },
   "profileCard.color": { ko: "색감", en: "Color" },
   "profileCard.composition": { ko: "구도", en: "Comp." },
   "profileCard.tone": { ko: "톤", en: "Tone" },
@@ -199,6 +203,147 @@ const translations = {
   "profileCard.toneTip": { ko: "피드 전반의 톤 통일성", en: "Overall tone consistency across feed" },
   "profileCard.trendTip": { ko: "현재 비주얼 트렌드 부합도", en: "Current visual trend alignment" },
   "profileCard.brandTip": { ko: "스타일 독창성과 브랜드 적합도", en: "Style originality and brand suitability" },
+
+  // Brands (multi-brand)
+  "brands.title": { ko: "내 브랜드", en: "My Brands" },
+  "brands.subtitle": { ko: "브랜드를 관리하고 인플루언서 매칭을 받아보세요", en: "Manage brands and get influencer matching" },
+  "brands.addBrand": { ko: "브랜드 추가", en: "Add Brand" },
+  "brands.empty": { ko: "등록된 브랜드가 없습니다", en: "No brands registered yet" },
+  "brands.emptyDesc": { ko: "첫 번째 브랜드를 등록하고 인플루언서 매칭을 시작하세요", en: "Register your first brand to start influencer matching" },
+  "brands.savedInfluencers": { ko: "저장된 인플루언서", en: "Saved Influencers" },
+  "brands.detail.recommendations": { ko: "추천 인플루언서", en: "Recommended Influencers" },
+  "brands.detail.saved": { ko: "저장된 인플루언서", en: "Saved Influencers" },
+  "brands.detail.settings": { ko: "설정", en: "Settings" },
+  "brands.detail.edit": { ko: "편집", en: "Edit" },
+  "brands.detail.delete": { ko: "브랜드 삭제", en: "Delete Brand" },
+  "brands.detail.deleteConfirm": { ko: "정말 이 브랜드를 삭제하시겠습니까?", en: "Are you sure you want to delete this brand?" },
+  "brands.detail.deleted": { ko: "브랜드가 삭제되었습니다", en: "Brand deleted" },
+  "brands.detail.updated": { ko: "브랜드가 업데이트되었습니다", en: "Brand updated" },
+  "brands.new.title": { ko: "새 브랜드 등록", en: "Register New Brand" },
+  "brands.keywords": { ko: "키워드", en: "keywords" },
+
+  // Brand tabs
+  "brands.tab.overview": { ko: "개요", en: "Overview" },
+  "brands.tab.recommendations": { ko: "AI 추천", en: "AI Match" },
+  "brands.tab.coaching": { ko: "코칭", en: "Coaching" },
+  "brands.tab.campaigns": { ko: "캠페인", en: "Campaigns" },
+  "brands.tab.settings": { ko: "설정", en: "Settings" },
+
+  // Brand overview section
+  "brands.overview.aiSummary": { ko: "AI 요약", en: "AI Summary" },
+  "brands.overview.positioning": { ko: "브랜드 포지셔닝", en: "Brand Positioning" },
+  "brands.overview.contentStrategy": { ko: "콘텐츠 전략", en: "Content Strategy" },
+  "brands.overview.idealProfile": { ko: "이상적 인플루언서 프로필", en: "Ideal Influencer Profile" },
+  "brands.overview.competitors": { ko: "추정 경쟁 브랜드", en: "Estimated Competitors" },
+
+  // Brand content strategy keys
+  "brands.strategy.postingPattern": { ko: "포스팅 패턴", en: "Posting Pattern" },
+  "brands.strategy.primaryMessage": { ko: "주요 메시지", en: "Primary Message" },
+  "brands.strategy.hashtagStrategy": { ko: "해시태그 전략", en: "Hashtag Strategy" },
+  "brands.strategy.storytellingStyle": { ko: "스토리텔링", en: "Storytelling" },
+
+  // Brand ideal influencer profile keys
+  "brands.profile.tone": { ko: "톤 & 무드", en: "Tone & Mood" },
+  "brands.profile.followerRange": { ko: "팔로워 규모", en: "Follower Range" },
+  "brands.profile.contentStyle": { ko: "콘텐츠 스타일", en: "Content Style" },
+  "brands.profile.audienceTraits": { ko: "오디언스 특성", en: "Audience Traits" },
+  "brands.profile.platformFit": { ko: "플랫폼", en: "Platform" },
+
+  // Brand recommendations
+  "brands.rec.avgMatch": { ko: "평균 매칭 점수", en: "Avg Match Score" },
+  "brands.rec.tierDist": { ko: "티어 분포", en: "Tier Distribution" },
+  "brands.rec.total": { ko: "추천 인플루언서", en: "Recommended" },
+  "brands.rec.count": { ko: "명", en: "" },
+  "brands.rec.avgVibe": { ko: "평균 VibeScore", en: "Avg VibeScore" },
+  "brands.rec.outreach": { ko: "아웃리치", en: "Outreach" },
+
+  // Brand campaigns
+  "brands.campaigns.title": { ko: "캠페인 관리", en: "Campaign Management" },
+  "brands.campaigns.manage": { ko: "캠페인 관리 페이지", en: "Campaign Page" },
+  "brands.campaigns.desc": { ko: "캠페인을 생성하고 인플루언서를 추가하여 협업을 관리하세요. AI가 아웃리치 메시지, 캠페인 브리프, 예산 최적화를 도와드립니다.", en: "Create campaigns and add influencers to manage collaborations. AI helps with outreach messages, campaign briefs, and budget optimization." },
+  "brands.campaigns.create": { ko: "새 캠페인 만들기", en: "Create Campaign" },
+
+  // Brand coaching
+  "brands.coaching.loading": { ko: "AI 코칭 생성 중...", en: "Generating AI coaching..." },
+  "brands.coaching.error": { ko: "AI 코칭을 불러올 수 없습니다", en: "Could not load AI coaching" },
+  "brands.coaching.overall": { ko: "종합 평가", en: "Overall Assessment" },
+  "brands.coaching.strengths": { ko: "강점", en: "Strengths" },
+  "brands.coaching.improvements": { ko: "개선 영역", en: "Improvement Areas" },
+  "brands.coaching.collabStrategy": { ko: "인플루언서 협업 전략", en: "Influencer Collaboration Strategy" },
+  "brands.coaching.collabType": { ko: "협업 유형", en: "Collaboration Type" },
+  "brands.coaching.campaignIdeas": { ko: "캠페인 아이디어", en: "Campaign Ideas" },
+  "brands.coaching.budget": { ko: "예산 배분", en: "Budget Allocation" },
+  "brands.coaching.timing": { ko: "타이밍", en: "Timing" },
+  "brands.coaching.roadmap": { ko: "성장 로드맵", en: "Growth Roadmap" },
+  "brands.coaching.1month": { ko: "1개월", en: "1 Month" },
+  "brands.coaching.3month": { ko: "3개월", en: "3 Months" },
+  "brands.coaching.6month": { ko: "6개월", en: "6 Months" },
+  "brands.coaching.competitive": { ko: "경쟁 포지셔닝", en: "Competitive Positioning" },
+
+  // Brand settings
+  "brands.settings.save": { ko: "설정 저장", en: "Save Settings" },
+  "brands.settings.saving": { ko: "저장 중...", en: "Saving..." },
+  "brands.settings.dangerZone": { ko: "위험 영역", en: "Danger Zone" },
+  "brands.settings.deleting": { ko: "삭제 중...", en: "Deleting..." },
+
+  // Recommendation card
+  "recCard.match": { ko: "매칭", en: "Match" },
+  "recCard.addToCampaign": { ko: "캠페인에 추가", en: "Add to Campaign" },
+  "recCard.campaign": { ko: "캠페인", en: "Campaign" },
+  "recCard.saved": { ko: "저장됨", en: "Saved" },
+  "recCard.save": { ko: "저장", en: "Save" },
+  "recCard.detail": { ko: "상세보기", en: "Detail" },
+
+  // Discovery
+  "discover.browseTitle": { ko: "인플루언서 브라우징", en: "Browse Influencers" },
+  "discover.trending": { ko: "트렌딩", en: "Trending" },
+  "discover.trendingDesc": { ko: "최근 30일 인기 분석 인플루언서", en: "Most analyzed influencers in the last 30 days" },
+  "discover.filterTier": { ko: "티어", en: "Tier" },
+  "discover.filterCategory": { ko: "카테고리", en: "Category" },
+  "discover.filterPlatform": { ko: "플랫폼", en: "Platform" },
+  "discover.filterMinVibe": { ko: "최소 VibeScore", en: "Min VibeScore" },
+  "discover.sortLabel": { ko: "정렬", en: "Sort" },
+  "discover.sortVibeScore": { ko: "VibeScore", en: "VibeScore" },
+  "discover.sortFollowers": { ko: "팔로워", en: "Followers" },
+  "discover.sortEngagement": { ko: "참여율", en: "Engagement" },
+  "discover.sortNewest": { ko: "최신 분석", en: "Newest" },
+  "discover.noResults": { ko: "조건에 맞는 인플루언서가 없습니다", en: "No influencers match your filters" },
+  "discover.noResultsDesc": { ko: "필터를 조정하거나 인플루언서를 분석해보세요", en: "Adjust filters or analyze more influencers" },
+  "discover.loadMore": { ko: "더 보기", en: "Load More" },
+  "discover.allTiers": { ko: "전체", en: "All" },
+  "discover.allPlatforms": { ko: "전체", en: "All" },
+  "discover.allCategories": { ko: "전체", en: "All" },
+
+  // Discover v2 sections
+  "discover.trendingBrands": { ko: "뜨는 브랜드", en: "Trending Brands" },
+  "discover.trendingBrandsDesc": { ko: "최근 등록된 높은 점수의 브랜드", en: "Recently registered high-scoring brands" },
+  "discover.trendingContent": { ko: "뜨는 콘텐츠", en: "Trending Content" },
+  "discover.trendingContentDesc": { ko: "인기 인플루언서의 높은 참여율 포스트", en: "High engagement posts from top influencers" },
+  "discover.trendingHashtags": { ko: "뜨는 해시태그", en: "Trending Hashtags" },
+  "discover.trendingHashtagsDesc": { ko: "가장 많이 사용되는 해시태그", en: "Most used hashtags across influencers" },
+  "discover.hiddenGems": { ko: "Hidden Gems", en: "Hidden Gems" },
+  "discover.hiddenGemsDesc": { ko: "가성비 최고의 소규모 인플루언서", en: "Best value nano/micro influencers" },
+  "discover.risingStars": { ko: "Rising Stars", en: "Rising Stars" },
+  "discover.risingStarsDesc": { ko: "급성장 중인 인플루언서", en: "Fast-growing influencers" },
+  "discover.engagementLeaders": { ko: "참여율 리더", en: "Engagement Leaders" },
+  "discover.engagementLeadersDesc": { ko: "참여율 상위 인플루언서", en: "Top engagement rate influencers" },
+  "discover.categoryTop": { ko: "카테고리 TOP", en: "Category TOP" },
+  "discover.categoryTopDesc": { ko: "각 분야 최고의 인플루언서", en: "Best influencer in each category" },
+  "discover.nInfluencers": { ko: "명의 인플루언서", en: " influencers" },
+  "discover.likes": { ko: "좋아요", en: "Likes" },
+  "discover.comments": { ko: "댓글", en: "Comments" },
+
+  // Nav updated
+  "nav.brands": { ko: "Brands", en: "Brands" },
+
+  // Dashboard filters
+  "dashboard.dateRange": { ko: "기간", en: "Period" },
+  "dashboard.dateRange.7d": { ko: "7일", en: "7 Days" },
+  "dashboard.dateRange.30d": { ko: "30일", en: "30 Days" },
+  "dashboard.dateRange.90d": { ko: "90일", en: "90 Days" },
+  "dashboard.dateRange.all": { ko: "전체", en: "All" },
+  "dashboard.csvDownload": { ko: "CSV 다운로드", en: "Download CSV" },
+  "dashboard.csvSuccess": { ko: "CSV 파일이 다운로드되었습니다", en: "CSV file downloaded" },
 
   // Common
   "common.share": { ko: "공유", en: "Share" },

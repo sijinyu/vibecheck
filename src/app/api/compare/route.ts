@@ -7,9 +7,32 @@ import {
   compareInfluencers,
   type CompareInfluencerInput,
 } from "@/lib/ai/compare-engine";
+import { tryCreateClient } from "@/lib/supabase/server";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    // Auth check
+    const supabase = await tryCreateClient();
+    if (supabase) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return NextResponse.json(
+          { error: { message: "로그인이 필요합니다" } },
+          { status: 401 }
+        );
+      }
+
+      // Rate limit
+      const rl = checkRateLimit(`compare:${user.id}`, RATE_LIMITS.compare);
+      if (!rl.allowed) {
+        return NextResponse.json(
+          { error: { message: "요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요." } },
+          { status: 429 }
+        );
+      }
+    }
+
     const body = await request.json();
     const { handles, platform = "instagram" } = body;
 

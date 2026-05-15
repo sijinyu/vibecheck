@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { PageTransition } from "@/components/layout/page-transition";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,13 +17,18 @@ import {
   Bookmark,
   ArrowUpDown,
   Loader2,
+  Download,
+  Trash2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { getScoreColor } from "@/lib/score-utils";
 import { useI18n } from "@/lib/i18n/context";
+import { generateAnalysesCsv, downloadCsv } from "@/lib/export/csv-generator";
 
 type Tab = "history" | "saved";
 type SortBy = "recent" | "score";
+type DateRange = "7d" | "30d" | "90d" | "all";
 
 interface AnalysisItem {
   id: string;
@@ -60,92 +66,136 @@ interface DashboardStats {
   totalSaved: number;
 }
 
-const MOCK_HISTORY: AnalysisItem[] = [
-  {
-    id: "1",
-    handle: "minimal_mood",
-    platform: "instagram",
-    aestheticScore: 89,
-    vibeScore: 82,
-    engagementScore: 75,
-    consistencyScore: 85,
-    growthPotentialScore: 60,
-    authenticityScore: 90,
-    engagementRate: 0.035,
-    summary: null,
-    analyzedAt: "2025-05-07T10:30:00Z",
-  },
-  {
-    id: "2",
-    handle: "tone_studio",
-    platform: "instagram",
-    aestheticScore: 85,
-    vibeScore: 78,
-    engagementScore: 70,
-    consistencyScore: 80,
-    growthPotentialScore: 55,
-    authenticityScore: 88,
-    engagementRate: 0.028,
-    summary: null,
-    analyzedAt: "2025-05-06T15:20:00Z",
-  },
-  {
-    id: "3",
-    handle: "vibe_daily",
-    platform: "instagram",
-    aestheticScore: 78,
-    vibeScore: 71,
-    engagementScore: 65,
-    consistencyScore: 68,
-    growthPotentialScore: 72,
-    authenticityScore: 80,
-    engagementRate: 0.042,
-    summary: null,
-    analyzedAt: "2025-05-05T09:00:00Z",
-  },
-];
-
 export default function DashboardPage() {
   const { t, locale } = useI18n();
   const [tab, setTab] = useState<Tab>("history");
   const [sortBy, setSortBy] = useState<SortBy>("recent");
+  const [dateRange, setDateRange] = useState<DateRange>("all");
   const [history, setHistory] = useState<AnalysisItem[]>([]);
   const [saved, setSaved] = useState<SavedItem[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [unsavingIds, setUnsavingIds] = useState<Set<string>>(new Set());
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/dashboard");
+      const params = new URLSearchParams();
+      if (dateRange !== "all") {
+        const days = dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90;
+        const from = new Date();
+        from.setDate(from.getDate() - days);
+        params.set("dateFrom", from.toISOString());
+      }
+
+      const res = await fetch(`/api/dashboard?${params}`);
       const json = await res.json();
 
       if (res.ok && json.data) {
-        setHistory(
-          json.data.analyses.length > 0 ? json.data.analyses : MOCK_HISTORY
-        );
+        setHistory(json.data.analyses ?? []);
         setSaved(json.data.saved ?? []);
         setStats(json.data.stats ?? null);
       } else {
-        setHistory(MOCK_HISTORY);
+        setHistory([]);
       }
     } catch {
-      setHistory(MOCK_HISTORY);
+      setHistory([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateRange]);
 
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
 
-  function handleTabChange(newTab: Tab) {
-    setTab(newTab);
+  function handleCsvDownload() {
+    if (history.length === 0) return;
+    const csv = generateAnalysesCsv(history);
+    downloadCsv(csv, `vibecheck-analyses-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success(t("dashboard.csvSuccess"));
   }
 
   function handleSortToggle() {
     setSortBy(sortBy === "recent" ? "score" : "recent");
+  }
+
+  async function handleDeleteAnalysis(id: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeletingIds((prev) => new Set([...prev, id]));
+    try {
+      const res = await fetch("/api/dashboard", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ analysisIds: [id] }),
+      });
+      if (res.ok) {
+        setHistory((prev) => prev.filter((item) => item.id !== id));
+        toast.success("분석 기록이 삭제되었습니다");
+      } else {
+        toast.error("삭제에 실패했습니다");
+      }
+    } catch {
+      toast.error("삭제에 실패했습니다");
+    } finally {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
+  async function handleClearAllHistory() {
+    if (history.length === 0) return;
+    const ids = history.map((h) => h.id);
+    setDeletingIds(new Set(ids));
+    try {
+      const res = await fetch("/api/dashboard", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ analysisIds: ids }),
+      });
+      if (res.ok) {
+        setHistory([]);
+        toast.success("모든 분석 기록이 삭제되었습니다");
+      } else {
+        toast.error("삭제에 실패했습니다");
+      }
+    } catch {
+      toast.error("삭제에 실패했습니다");
+    } finally {
+      setDeletingIds(new Set());
+    }
+  }
+
+  async function handleUnsave(influencerId: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setUnsavingIds((prev) => new Set([...prev, influencerId]));
+    try {
+      const res = await fetch("/api/saved-influencers", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ influencerId }),
+      });
+      if (res.ok) {
+        setSaved((prev) => prev.filter((item) => item.influencerId !== influencerId));
+        toast.success("즐겨찾기가 해제되었습니다");
+      } else {
+        toast.error("해제에 실패했습니다");
+      }
+    } catch {
+      toast.error("해제에 실패했습니다");
+    } finally {
+      setUnsavingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(influencerId);
+        return next;
+      });
+    }
   }
 
   const sortedHistory = [...history].sort((a, b) =>
@@ -162,22 +212,54 @@ export default function DashboardPage() {
 
   return (
     <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-4xl lg:px-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">{t("dashboard.title")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("dashboard.subtitle")}
-          </p>
+      <div className="mb-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">{t("dashboard.title")}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t("dashboard.subtitle")}
+            </p>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCsvDownload}
+              className="text-muted-foreground"
+              disabled={history.length === 0}
+              aria-label={t("dashboard.csvDownload")}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSortToggle}
+              className="text-muted-foreground"
+              aria-label={sortBy === "recent" ? t("common.sortByRecent") : t("common.sortByScore")}
+            >
+              <ArrowUpDown className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleSortToggle}
-          className="text-muted-foreground"
-          aria-label={sortBy === "recent" ? t("common.sortByRecent") : t("common.sortByScore")}
-        >
-          <ArrowUpDown className="h-4 w-4" />
-        </Button>
+
+        {/* Date Range Filter */}
+        <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
+          {(["7d", "30d", "90d", "all"] as const).map((range) => (
+            <button
+              key={range}
+              type="button"
+              onClick={() => setDateRange(range)}
+              className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                dateRange === range
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t(`dashboard.dateRange.${range}`)}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Loading */}
@@ -210,25 +292,50 @@ export default function DashboardPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2">
-            <Button
-              variant={tab === "history" ? "secondary" : "ghost"}
-              size="sm"
-              className="gap-1.5"
-              onClick={() => handleTabChange("history")}
-            >
-              <LayoutDashboard className="h-3.5 w-3.5" />
-              {t("dashboard.history")}
-            </Button>
-            <Button
-              variant={tab === "saved" ? "secondary" : "ghost"}
-              size="sm"
-              className="gap-1.5"
-              onClick={() => handleTabChange("saved")}
-            >
-              <Bookmark className="h-3.5 w-3.5" />
-              {t("dashboard.saved")}
-            </Button>
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              <Button
+                variant={tab === "history" ? "secondary" : "ghost"}
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setTab("history")}
+              >
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                {t("dashboard.history")}
+                {history.length > 0 && (
+                  <span className="ml-1 rounded-full bg-muted px-1.5 text-[10px] tabular-nums">
+                    {history.length}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant={tab === "saved" ? "secondary" : "ghost"}
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setTab("saved")}
+              >
+                <Bookmark className="h-3.5 w-3.5" />
+                {t("dashboard.saved")}
+                {saved.length > 0 && (
+                  <span className="ml-1 rounded-full bg-muted px-1.5 text-[10px] tabular-nums">
+                    {saved.length}
+                  </span>
+                )}
+              </Button>
+            </div>
+
+            {/* Clear all (history tab only) */}
+            {tab === "history" && history.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-xs text-muted-foreground hover:text-destructive"
+                onClick={handleClearAllHistory}
+              >
+                <Trash2 className="h-3 w-3" />
+                전체 삭제
+              </Button>
+            )}
           </div>
 
           {/* Sort indicator */}
@@ -245,16 +352,16 @@ export default function DashboardPage() {
                     key={item.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
+                    transition={{ delay: i * 0.03 }}
                   >
                     <Link href={`/influencer/${item.handle}`}>
-                      <Card className="cursor-pointer border-border/50 bg-card/50 transition-colors hover:bg-card/80">
+                      <Card className="group cursor-pointer border-border/50 bg-card/50 transition-colors hover:bg-card/80">
                         <CardContent className="flex items-center gap-3 py-3">
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                             {item.handle.charAt(0).toUpperCase()}
                           </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">@{item.handle}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">@{item.handle}</p>
                             <div className="flex items-center gap-1.5">
                               <p className="text-xs capitalize text-muted-foreground">
                                 {item.platform}
@@ -266,7 +373,7 @@ export default function DashboardPage() {
                               )}
                             </div>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right shrink-0">
                             <p
                               className={`text-lg font-bold tabular-nums ${getScoreColor(item.vibeScore ?? item.aestheticScore)}`}
                             >
@@ -276,20 +383,38 @@ export default function DashboardPage() {
                               {new Date(item.analyzedAt).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US")}
                             </p>
                           </div>
+                          {/* Delete button */}
+                          <button
+                            onClick={(e) => handleDeleteAnalysis(item.id, e)}
+                            disabled={deletingIds.has(item.id)}
+                            className="shrink-0 rounded-full p-1.5 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                            aria-label="삭제"
+                          >
+                            {deletingIds.has(item.id) ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <X className="h-3.5 w-3.5" />
+                            )}
+                          </button>
                         </CardContent>
                       </Card>
                     </Link>
                   </motion.div>
                 ))
               ) : (
-                <Card className="border-border/50 bg-card/50">
+                <Card className="border-border/50 bg-card/50 lg:col-span-2">
                   <CardContent className="flex flex-col items-center gap-4 py-16">
-                    <div className="rounded-xl bg-muted p-4">
-                      <LayoutDashboard className="h-8 w-8 text-muted-foreground" />
+                    <div className="rounded-xl bg-primary/10 p-4">
+                      <Search className="h-8 w-8 text-primary" />
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {t("dashboard.emptyHistory")}
-                    </p>
+                    <div className="text-center">
+                      <p className="text-sm font-medium">
+                        {t("dashboard.emptyHistory")}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        첫 인플루언서를 분석해보세요
+                      </p>
+                    </div>
                     <Link href="/analyze">
                       <Button size="sm" className="gap-2">
                         <Search className="h-3.5 w-3.5" />
@@ -311,18 +436,18 @@ export default function DashboardPage() {
                     key={item.influencerId}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
+                    transition={{ delay: i * 0.03 }}
                   >
                     <Link href={`/influencer/${item.handle}`}>
-                      <Card className="cursor-pointer border-border/50 bg-card/50 transition-colors hover:bg-card/80">
+                      <Card className="group cursor-pointer border-border/50 bg-card/50 transition-colors hover:bg-card/80">
                         <CardContent className="flex items-center gap-3 py-3">
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                             {(item.displayName ?? item.handle)
                               .charAt(0)
                               .toUpperCase()}
                           </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
                               {item.displayName ?? `@${item.handle}`}
                             </p>
                             <div className="flex items-center gap-2">
@@ -342,7 +467,7 @@ export default function DashboardPage() {
                               )}
                             </div>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right shrink-0">
                             <p
                               className={`text-lg font-bold tabular-nums ${getScoreColor(item.vibeScore ?? item.aestheticScore)}`}
                             >
@@ -352,13 +477,26 @@ export default function DashboardPage() {
                               {new Date(item.savedAt).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US")}
                             </p>
                           </div>
+                          {/* Unsave button */}
+                          <button
+                            onClick={(e) => handleUnsave(item.influencerId, e)}
+                            disabled={unsavingIds.has(item.influencerId)}
+                            className="shrink-0 rounded-full p-1.5 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                            aria-label="즐겨찾기 해제"
+                          >
+                            {unsavingIds.has(item.influencerId) ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <X className="h-3.5 w-3.5" />
+                            )}
+                          </button>
                         </CardContent>
                       </Card>
                     </Link>
                   </motion.div>
                 ))
               ) : (
-                <Card className="border-border/50 bg-card/50">
+                <Card className="border-border/50 bg-card/50 lg:col-span-2">
                   <CardContent className="flex flex-col items-center gap-4 py-16">
                     <div className="rounded-xl bg-muted p-4">
                       <Bookmark className="h-8 w-8 text-muted-foreground" />

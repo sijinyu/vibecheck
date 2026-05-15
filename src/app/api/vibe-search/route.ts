@@ -15,55 +15,6 @@ interface MatchedInfluencer {
   category: string;
 }
 
-// Mock results returned when Supabase/pgvector is unavailable
-const MOCK_RESULTS: MatchedInfluencer[] = [
-  {
-    id: "1",
-    handle: "minimal_mood",
-    platform: "instagram",
-    displayName: "Minimal Mood",
-    aestheticScore: 89,
-    matchScore: 94,
-    category: "Lifestyle",
-  },
-  {
-    id: "2",
-    handle: "tone_studio",
-    platform: "instagram",
-    displayName: "Tone Studio",
-    aestheticScore: 85,
-    matchScore: 87,
-    category: "Fashion",
-  },
-  {
-    id: "3",
-    handle: "vibe_daily",
-    platform: "instagram",
-    displayName: "Vibe Daily",
-    aestheticScore: 82,
-    matchScore: 83,
-    category: "Beauty",
-  },
-  {
-    id: "4",
-    handle: "aesthetic_kr",
-    platform: "instagram",
-    displayName: "Aesthetic KR",
-    aestheticScore: 78,
-    matchScore: 79,
-    category: "Art",
-  },
-  {
-    id: "5",
-    handle: "mood_catcher",
-    platform: "instagram",
-    displayName: "Mood Catcher",
-    aestheticScore: 76,
-    matchScore: 75,
-    category: "Travel",
-  },
-];
-
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
@@ -116,12 +67,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ data: { results } });
       }
 
-      // If no matches found (e.g., empty DB), fall through to mock
+      // If no matches found, return empty
     }
 
-    // Fallback: return mock results
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    return NextResponse.json({ data: { results: MOCK_RESULTS } });
+    // No matches found
+    return NextResponse.json({ data: { results: [] } });
   } catch {
     return NextResponse.json(
       { error: { message: "Vibe Search에 실패했습니다" } },

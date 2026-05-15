@@ -5,6 +5,7 @@ import { analyzeAesthetics } from "@/lib/ai/scoring-engine";
 import { calculateVibeScore } from "@/lib/ai/vibe-score-engine";
 import { tryCreateClient } from "@/lib/supabase/server";
 import { upsertInfluencer, insertAnalysis } from "@/lib/supabase/queries";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
@@ -16,6 +17,29 @@ export async function POST(request: Request) {
         { error: { code: "INVALID_INPUT", message: "핸들을 입력해주세요" } },
         { status: 400 }
       );
+    }
+
+    // Auth check
+    const supabaseAuth = await tryCreateClient();
+    let userId: string | null = null;
+    if (supabaseAuth) {
+      const { data: { user } } = await supabaseAuth.auth.getUser();
+      if (!user) {
+        return NextResponse.json(
+          { error: { code: "UNAUTHORIZED", message: "로그인이 필요합니다" } },
+          { status: 401 }
+        );
+      }
+      userId = user.id;
+
+      // Rate limit
+      const rl = checkRateLimit(`analyze:${user.id}`, RATE_LIMITS.analyze);
+      if (!rl.allowed) {
+        return NextResponse.json(
+          { error: { code: "RATE_LIMITED", message: "요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요." } },
+          { status: 429 }
+        );
+      }
     }
 
     // Step 1: Collect feed data
@@ -72,8 +96,21 @@ export async function POST(request: Request) {
           top_hashtags: vibeResult.topHashtags,
           content_categories: vibeResult.contentCategories,
           insights: vibeResult.insights as unknown as Record<string, unknown>[],
+          post_performances: vibeResult.postPerformances as unknown as Record<string, unknown>[],
+          content_type_breakdown: vibeResult.contentTypeBreakdown as unknown as Record<string, unknown>[],
+          trend_direction: vibeResult.trendDirection,
+          trend_magnitude: vibeResult.trendMagnitude,
+          avg_shares_per_post: vibeResult.avgSharesPerPost,
+          avg_plays_per_post: vibeResult.avgPlaysPerPost,
+          estimated_cpe: vibeResult.estimatedCPE,
+          content_effectiveness_score: vibeResult.contentEffectivenessScore,
+          platform_benchmark: vibeResult.platformBenchmark,
           category: vibeResult.contentCategories[0] ?? null,
           representative_images: analysis.representativeImages,
+          one_liner: analysis.oneLiner || null,
+          content_topics: analysis.contentTopics,
+          data_source: feedResult.data.dataSource,
+          ai_source: analysis.aiSource,
         });
 
         const analysisRow = await insertAnalysis(supabase, {
@@ -111,6 +148,8 @@ export async function POST(request: Request) {
         representativeImages: analysis.representativeImages,
         summary: analysis.summary,
         analysisId,
+        dataSource: feedResult.data.dataSource,
+        aiSource: analysis.aiSource,
       },
     });
   } catch {

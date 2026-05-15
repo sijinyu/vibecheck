@@ -17,7 +17,7 @@ import { type TranslationKey } from "@/lib/i18n/translations";
 
 const navItems = [
   { href: "/analyze", labelKey: "nav.discover" as TranslationKey, icon: Search },
-  { href: "/brand", labelKey: "nav.brand" as TranslationKey, icon: Palette },
+  { href: "/brands", labelKey: "nav.brands" as TranslationKey, icon: Palette },
   { href: "/compare", labelKey: "nav.compare" as TranslationKey, icon: GitCompareArrows },
   { href: "/dashboard", labelKey: "nav.dashboard" as TranslationKey, icon: LayoutDashboard },
 ] as const;

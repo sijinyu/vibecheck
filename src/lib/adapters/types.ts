@@ -1,4 +1,7 @@
 /** Platform-agnostic normalized feed data */
+
+export type DataSource = "live" | "cached";
+
 export interface FeedPost {
   imageUrl: string;
   caption: string;
@@ -9,6 +12,7 @@ export interface FeedPost {
   shareCount?: number;
   playCount?: number;
   postType?: "image" | "video" | "carousel" | "reel";
+  shortcode?: string;
 }
 
 export interface ProfileData {
@@ -25,6 +29,8 @@ export interface ProfileData {
 export interface FeedData {
   profile: ProfileData;
   posts: FeedPost[];
+  dataSource: DataSource;
+  dataSourceReason?: string;
 }
 
 export interface AdapterError {

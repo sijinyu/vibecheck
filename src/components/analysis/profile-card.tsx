@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -12,7 +14,7 @@ interface ProfileCardProps {
   handle: string;
   platform: "instagram" | "tiktok";
   displayName?: string | null;
-  profileImageUrl?: string;
+  profileImageUrl?: string | null;
   aestheticScore: number;
   vibeScore?: number;
   tier?: string;
@@ -33,6 +35,7 @@ export function ProfileCard({
   handle,
   platform,
   displayName,
+  profileImageUrl,
   aestheticScore,
   vibeScore,
   tier,
@@ -43,8 +46,10 @@ export function ProfileCard({
   linkable = true,
 }: ProfileCardProps) {
   const { t } = useI18n();
+  const [imgError, setImgError] = useState(false);
   const displayScore = vibeScore ?? aestheticScore;
   const platformLabel = platform === "instagram" ? "Instagram" : "TikTok";
+  const initials = (displayName ?? handle).charAt(0).toUpperCase();
 
   const cardContent = (
     <Card
@@ -53,8 +58,21 @@ export function ProfileCard({
       <CardContent className="p-5">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
-            {(displayName ?? handle).charAt(0).toUpperCase()}
+          <div className="relative h-12 w-12 shrink-0 rounded-full">
+            {profileImageUrl && !imgError ? (
+              <Image
+                src={profileImageUrl}
+                alt={displayName ?? handle}
+                fill
+                unoptimized
+                className="rounded-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                {initials}
+              </div>
+            )}
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold">{displayName ?? handle}</p>
@@ -80,7 +98,14 @@ export function ProfileCard({
         {/* Quick Stats */}
         {engagementRate !== undefined && engagementRate > 0 && (
           <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-            <span>{t("profileCard.engagementRate")} {(engagementRate * 100).toFixed(2)}%</span>
+            <Tooltip>
+              <TooltipTrigger className="cursor-help">
+                <span>{t("profileCard.engagementRate")} {(engagementRate * 100).toFixed(2)}%</span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                <p className="text-xs">{t("profileCard.engagementRateTip")}</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         )}
 

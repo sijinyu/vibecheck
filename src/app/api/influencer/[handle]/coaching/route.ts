@@ -67,12 +67,20 @@ export async function GET(
       );
     }
 
-    // Fetch influencer data from DB
+    // Auth + DB check
     const supabase = await tryCreateClient();
     if (!supabase) {
       return NextResponse.json(
         { error: { message: "데이터베이스에 연결할 수 없습니다" } },
         { status: 503 }
+      );
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: { message: "로그인이 필요합니다" } },
+        { status: 401 }
       );
     }
 

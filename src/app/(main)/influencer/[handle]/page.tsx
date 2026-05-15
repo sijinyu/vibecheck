@@ -23,11 +23,36 @@ import {
   Users,
   UserCheck,
   ImageIcon,
+  RefreshCw,
+  AlertTriangle,
+  Bookmark,
+  BookmarkCheck,
+  Plus,
+  Building2,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n/context";
+import { DataSourceBanner } from "@/components/analysis/data-source-banner";
+import { OutreachModal } from "@/components/analysis/outreach-modal";
+import { type DataSource } from "@/lib/adapters/types";
 
 type Tab = "overview" | "content" | "engagement" | "brandfit" | "coaching";
+
+interface PostPerformance {
+  imageUrl: string;
+  likeCount: number;
+  commentCount: number;
+  shareCount: number;
+  caption: string;
+  hashtags: string[];
+  timestamp: string;
+  postType: string;
+  engagementRate: number;
+  performanceIndex: number;
+  shortcode?: string;
+}
 
 interface InfluencerData {
   id: string;
@@ -48,11 +73,21 @@ interface InfluencerData {
   engagement_rate: number | null;
   avg_likes_per_post: number | null;
   avg_comments_per_post: number | null;
+  avg_shares_per_post: number | null;
+  avg_plays_per_post: number | null;
   posting_frequency_days: number | null;
   top_hashtags: string[];
   content_categories: string[];
-  insights: Array<{ type: string; title: string; description: string }> | null;
+  insights: Array<{ type: string; title: string; description: string; evidence?: string }> | null;
+  post_performances: PostPerformance[] | null;
+  trend_direction: string | null;
+  trend_magnitude: number | null;
+  estimated_cpe: number | null;
+  platform_benchmark: number | null;
   representative_images: string[];
+  last_analyzed_at: string | null;
+  data_source: string | null;
+  discovery_status: string | null;
 }
 
 function formatNumber(n: number): string {
@@ -72,6 +107,11 @@ export default function InfluencerProfilePage({
   const [data, setData] = useState<InfluencerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reanalyzing, setReanalyzing] = useState(false);
+  const [brands, setBrands] = useState<Array<{ id: string; brand_name: string }>>([]);
+  const [savingToBrand, setSavingToBrand] = useState<string | null>(null);
+  const [savedBrands, setSavedBrands] = useState<Set<string>>(new Set());
+  const [outreachOpen, setOutreachOpen] = useState(false);
 
   const fetchInfluencer = useCallback(async () => {
     setLoading(true);
@@ -95,6 +135,84 @@ export default function InfluencerProfilePage({
     fetchInfluencer();
   }, [fetchInfluencer]);
 
+  // Fetch user's brands for Brand Fit tab
+  useEffect(() => {
+    async function fetchBrands() {
+      try {
+        const res = await fetch("/api/brand");
+        const json = await res.json();
+        if (res.ok && json.data) {
+          setBrands(json.data);
+        }
+      } catch {
+        // silently fail — brands are optional
+      }
+    }
+    fetchBrands();
+  }, []);
+
+  async function handleSaveToBrand(brandId: string) {
+    if (!data) return;
+    setSavingToBrand(brandId);
+    try {
+      const res = await fetch("/api/saved-influencers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          influencer_handle: data.handle,
+          influencer_platform: data.platform,
+          brand_id: brandId,
+        }),
+      });
+      if (res.ok) {
+        setSavedBrands((prev) => new Set([...prev, brandId]));
+        toast.success("인플루언서가 브랜드에 저장되었습니다");
+      } else {
+        const json = await res.json();
+        if (json.error?.message?.includes("duplicate") || json.error?.message?.includes("already")) {
+          setSavedBrands((prev) => new Set([...prev, brandId]));
+          toast.info("이미 저장된 인플루언서입니다");
+        } else {
+          toast.error(json.error?.message ?? "저장에 실패했습니다");
+        }
+      }
+    } catch {
+      toast.error("저장에 실패했습니다");
+    } finally {
+      setSavingToBrand(null);
+    }
+  }
+
+  async function handleReanalyze() {
+    setReanalyzing(true);
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ handle, platform: data?.platform ?? "instagram" }),
+      });
+      if (res.ok) {
+        toast.success("재분석이 완료되었습니다");
+        await fetchInfluencer();
+      } else {
+        const json = await res.json();
+        toast.error(json.error?.message ?? "재분석에 실패했습니다");
+      }
+    } catch {
+      toast.error("재분석에 실패했습니다");
+    } finally {
+      setReanalyzing(false);
+    }
+  }
+
+  // Check data freshness
+  const isStale = data?.last_analyzed_at
+    ? Date.now() - new Date(data.last_analyzed_at).getTime() > 7 * 24 * 60 * 60 * 1000
+    : false;
+
+  // Light profiles don't have full analysis data
+  const isFullProfile = data?.discovery_status === "full" || (data?.post_performances && data.post_performances.length > 0);
+
   const tabs: { key: Tab; labelKey: "profile.tab.overview" | "profile.tab.content" | "profile.tab.engagement" | "profile.tab.brandfit" | "profile.tab.coaching" }[] = [
     { key: "overview", labelKey: "profile.tab.overview" },
     { key: "content", labelKey: "profile.tab.content" },
@@ -103,17 +221,27 @@ export default function InfluencerProfilePage({
     { key: "coaching", labelKey: "profile.tab.coaching" },
   ];
 
-  // Generate mock post data for charts from representative images
-  const mockPosts = data?.representative_images.map((url, i) => ({
-    imageUrl: url,
-    likeCount: Math.max(1, Number(data.avg_likes_per_post ?? 100) + (i % 3 - 1) * 50),
-    commentCount: Math.max(0, Number(data.avg_comments_per_post ?? 10) + (i % 2 - 1) * 5),
-    caption: "",
-    hashtags: data.top_hashtags.slice(0, 3),
-    timestamp: new Date(
-      Date.now() - i * 2 * 24 * 60 * 60 * 1000
-    ).toISOString(),
-  })) ?? [];
+  // Use real post performance data from DB
+  const hasRealPosts = data?.post_performances && data.post_performances.length > 0;
+  const posts = hasRealPosts
+    ? data.post_performances!.map((p) => ({
+        imageUrl: p.imageUrl,
+        likeCount: p.likeCount,
+        commentCount: p.commentCount,
+        caption: p.caption,
+        hashtags: p.hashtags,
+        timestamp: p.timestamp,
+        shortcode: p.shortcode,
+      }))
+    : [];
+
+  // Representative images for gallery display only (no fake engagement numbers)
+  const galleryImages = !hasRealPosts && data?.representative_images
+    ? data.representative_images
+    : [];
+
+  // Trend direction indicator
+  const trendIcon = data?.trend_direction === "rising" ? "↑" : data?.trend_direction === "declining" ? "↓" : "→";
 
   return (
     <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-4xl lg:px-8">
@@ -160,7 +288,19 @@ export default function InfluencerProfilePage({
         >
           {/* Profile Header */}
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
+            {data.profile_image_url ? (
+              <img
+                src={data.profile_image_url}
+                alt={data.display_name ?? data.handle}
+                className="h-16 w-16 shrink-0 rounded-full object-cover"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                  (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
+                }}
+              />
+            ) : null}
+            <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary ${data.profile_image_url ? "hidden" : ""}`}>
               {(data.display_name ?? data.handle).charAt(0).toUpperCase()}
             </div>
             <div className="flex-1">
@@ -179,6 +319,27 @@ export default function InfluencerProfilePage({
                 </p>
               )}
             </div>
+          </div>
+
+          {/* Data Source + Freshness */}
+          <div className="flex flex-wrap items-center gap-2">
+            {data.data_source && (
+              <DataSourceBanner dataSource={data.data_source as DataSource} />
+            )}
+            {data.last_analyzed_at && (
+              <span className="text-[10px] text-muted-foreground">
+                {new Date(data.last_analyzed_at).toLocaleDateString(
+                  "ko-KR",
+                  { year: "numeric", month: "short", day: "numeric" }
+                )} 분석
+              </span>
+            )}
+            {isStale && (
+              <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="h-3 w-3" />
+                데이터가 오래되었을 수 있습니다
+              </span>
+            )}
           </div>
 
           {/* Quick Stats Row */}
@@ -210,7 +371,17 @@ export default function InfluencerProfilePage({
             </div>
           </div>
 
-          {/* Download Report */}
+          {/* Actions */}
+          <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setOutreachOpen(true)}
+            className="shrink-0 gap-1.5"
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            아웃리치
+          </Button>
           <DownloadReportButton
             handle={data.handle}
             platform={data.platform}
@@ -236,6 +407,8 @@ export default function InfluencerProfilePage({
                     engagementRate: Number(data.engagement_rate ?? 0),
                     avgLikesPerPost: Number(data.avg_likes_per_post ?? 0),
                     avgCommentsPerPost: Number(data.avg_comments_per_post ?? 0),
+                    avgSharesPerPost: Number(data.avg_shares_per_post ?? 0),
+                    avgPlaysPerPost: Number(data.avg_plays_per_post ?? 0),
                     postingFrequencyDays: Number(data.posting_frequency_days ?? 0),
                     topHashtags: data.top_hashtags ?? [],
                     contentCategories: data.content_categories ?? [],
@@ -243,13 +416,36 @@ export default function InfluencerProfilePage({
                       type: ins.type as "strength" | "warning" | "opportunity",
                       title: ins.title,
                       description: ins.description,
+                      evidence: ins.evidence,
                     })),
+                    postPerformances: (data.post_performances ?? []) as PostPerformance[],
+                    contentTypeBreakdown: [],
+                    trendDirection: (data.trend_direction as "rising" | "stable" | "declining") ?? "stable",
+                    trendMagnitude: data.trend_magnitude ?? 0,
+                    estimatedCPE: data.estimated_cpe ?? null,
+                    contentEffectivenessScore: 0,
+                    platformBenchmark: data.platform_benchmark ?? 0,
                   }
                 : undefined
             }
             summary=""
-            className="w-full"
+            className="flex-1"
           />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReanalyze}
+            disabled={reanalyzing}
+            className="shrink-0 gap-1.5"
+          >
+            {reanalyzing ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5" />
+            )}
+            재분석
+          </Button>
+          </div>
 
           {/* Tab Navigation */}
           <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
@@ -303,22 +499,68 @@ export default function InfluencerProfilePage({
                 avgCommentsPerPost={Number(data.avg_comments_per_post ?? 0)}
                 postingFrequencyDays={Number(data.posting_frequency_days ?? 0)}
                 followerCount={data.follower_count ?? 0}
+                avgSharesPerPost={Number(data.avg_shares_per_post ?? 0)}
+                avgPlaysPerPost={Number(data.avg_plays_per_post ?? 0)}
+                estimatedCPE={data.estimated_cpe}
+                platform={data.platform}
               />
 
-              {/* AI Insights */}
-              {data.insights && data.insights.length > 0 && (
+              {/* AI Insights (full profiles only — light profiles lack feed analysis) */}
+              {isFullProfile && data.insights && data.insights.length > 0 && (
                 <InsightsList
                   insights={data.insights.map((ins) => ({
                     type: ins.type as "strength" | "warning" | "opportunity",
                     title: ins.title,
                     description: ins.description,
+                    evidence: ins.evidence,
                   }))}
                 />
               )}
 
-              {/* Representative Feed Grid */}
-              {data.representative_images.length > 0 && (
-                <TopPerformingPosts posts={mockPosts} />
+              {/* Light profile notice */}
+              {!isFullProfile && (
+                <Card className="border-border/50 bg-card/50">
+                  <CardContent className="py-4 text-center">
+                    <p className="text-xs text-muted-foreground">
+                      기본 프로필 정보만 수집된 상태입니다. &quot;재분석&quot;을 실행하면 상세 인사이트를 확인할 수 있습니다.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Top Performing Posts (real data only) */}
+              {posts.length > 0 && (
+                <TopPerformingPosts posts={posts} handle={data.handle} platform={data.platform} />
+              )}
+
+              {/* Gallery fallback: representative images without engagement data */}
+              {posts.length === 0 && galleryImages.length > 0 && (
+                <div>
+                  <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    최근 게시물
+                  </p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {galleryImages.slice(0, 6).map((url, i) => (
+                      <a
+                        key={i}
+                        href={`https://www.instagram.com/${data.handle}/`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="relative aspect-square overflow-hidden rounded-lg bg-muted"
+                      >
+                        <img
+                          src={url}
+                          alt={`${data.handle} post ${i + 1}`}
+                          className="h-full w-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-center text-[10px] text-muted-foreground">
+                    정확한 참여 데이터를 보려면 &quot;재분석&quot;을 실행하세요
+                  </p>
+                </div>
               )}
             </div>
           )}
@@ -328,13 +570,32 @@ export default function InfluencerProfilePage({
             <ContentAnalysis
               topHashtags={data.top_hashtags ?? []}
               contentCategories={data.content_categories ?? []}
-              posts={mockPosts}
+              posts={posts}
             />
           )}
 
           {/* ─── Engagement Tab ──────────────────────────── */}
           {tab === "engagement" && (
             <div className="space-y-4">
+              {/* Trend Direction */}
+              {data.trend_direction && (
+                <Card className="border-border/50 bg-card/50">
+                  <CardContent className="flex items-center gap-3 py-3">
+                    <span className="text-2xl">{trendIcon}</span>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {data.trend_direction === "rising" ? "상승 트렌드" : data.trend_direction === "declining" ? "하락 트렌드" : "안정"}
+                      </p>
+                      {data.trend_magnitude != null && data.trend_magnitude > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          최근 인게이지먼트 {data.trend_magnitude}% {data.trend_direction === "rising" ? "증가" : data.trend_direction === "declining" ? "감소" : "변동"}
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Engagement Trend */}
               <Card className="border-border/50 bg-card/50">
                 <CardContent className="py-4">
@@ -342,7 +603,7 @@ export default function InfluencerProfilePage({
                     {t("profile.engagementTrend")}
                   </p>
                   <EngagementTrendChart
-                    posts={mockPosts}
+                    posts={posts}
                     followerCount={data.follower_count ?? 1}
                     className="h-48"
                   />
@@ -355,7 +616,7 @@ export default function InfluencerProfilePage({
                   <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     {t("profile.engagementMomentum")}
                   </p>
-                  <GrowthChart posts={mockPosts} className="h-40" />
+                  <GrowthChart posts={posts} className="h-40" />
                 </CardContent>
               </Card>
 
@@ -363,8 +624,11 @@ export default function InfluencerProfilePage({
               <TierBenchmarkCard
                 engagementRate={Number(data.engagement_rate ?? 0)}
                 tier={data.tier ?? "micro"}
+                platform={data.platform}
+                categories={data.content_categories}
                 avgLikesPerPost={Number(data.avg_likes_per_post ?? 0)}
                 avgCommentsPerPost={Number(data.avg_comments_per_post ?? 0)}
+                platformBenchmark={data.platform_benchmark ?? undefined}
               />
 
               {/* Engagement Metrics */}
@@ -374,6 +638,10 @@ export default function InfluencerProfilePage({
                 avgCommentsPerPost={Number(data.avg_comments_per_post ?? 0)}
                 postingFrequencyDays={Number(data.posting_frequency_days ?? 0)}
                 followerCount={data.follower_count ?? 0}
+                avgSharesPerPost={Number(data.avg_shares_per_post ?? 0)}
+                avgPlaysPerPost={Number(data.avg_plays_per_post ?? 0)}
+                estimatedCPE={data.estimated_cpe}
+                platform={data.platform}
               />
             </div>
           )}
@@ -381,18 +649,66 @@ export default function InfluencerProfilePage({
           {/* ─── Brand Fit Tab ───────────────────────────── */}
           {tab === "brandfit" && (
             <div className="space-y-4">
-              <Card className="border-border/50 bg-card/50">
-                <CardContent className="py-6 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {t("profile.brandFitDesc")}
-                  </p>
-                  <Link href="/brand">
-                    <Button className="mt-4" size="sm">
-                      {t("profile.registerBrand")}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+              {/* Save to Brand — show existing brands */}
+              {brands.length > 0 && (
+                <Card className="border-border/50 bg-card/50">
+                  <CardContent className="py-4">
+                    <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      내 브랜드에 저장
+                    </p>
+                    <div className="space-y-2">
+                      {brands.map((brand) => {
+                        const isSaved = savedBrands.has(brand.id);
+                        return (
+                          <button
+                            key={brand.id}
+                            onClick={() => !isSaved && handleSaveToBrand(brand.id)}
+                            disabled={savingToBrand === brand.id || isSaved}
+                            className="flex w-full items-center gap-3 rounded-lg border border-border/50 bg-card px-4 py-3 text-left transition-colors hover:bg-muted/50 disabled:opacity-60"
+                          >
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span className="flex-1 text-sm font-medium">{brand.brand_name}</span>
+                            {savingToBrand === brand.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            ) : isSaved ? (
+                              <BookmarkCheck className="h-4 w-4 text-primary" />
+                            ) : (
+                              <Bookmark className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* No brands yet — create one */}
+              {brands.length === 0 && (
+                <Card className="border-border/50 bg-card/50">
+                  <CardContent className="py-6 text-center">
+                    <Building2 className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm font-medium">브랜드를 등록하고 인플루언서를 저장하세요</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      브랜드를 등록하면 AI가 자동으로 최적의 인플루언서를 추천해드립니다
+                    </p>
+                    <Link href="/brands/new">
+                      <Button className="mt-4 gap-1.5" size="sm">
+                        <Plus className="h-3.5 w-3.5" />
+                        브랜드 등록하기
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Add new brand link */}
+              {brands.length > 0 && (
+                <Link href="/brands/new" className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+                  <Plus className="h-3 w-3" />
+                  새 브랜드 추가
+                </Link>
+              )}
 
               {/* Content Categories as brand fit hints */}
               {data.content_categories.length > 0 && (
@@ -420,6 +736,15 @@ export default function InfluencerProfilePage({
           {/* ─── Coaching Tab ────────────────────────────── */}
           {tab === "coaching" && <CoachingPanel handle={data.handle} />}
         </motion.div>
+      )}
+
+      {data && (
+        <OutreachModal
+          open={outreachOpen}
+          onOpenChange={setOutreachOpen}
+          influencerHandle={data.handle}
+          influencerPlatform={data.platform}
+        />
       )}
     </PageTransition>
   );

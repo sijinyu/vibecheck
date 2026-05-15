@@ -12,6 +12,8 @@ function makeInfluencer(overrides: Partial<{
   authenticity_score: number | null;
   tier: string | null;
   engagement_rate: number | null;
+  follower_count: number | null;
+  representative_images: string[];
   content_categories: string[];
 }>) {
   return {
@@ -25,6 +27,8 @@ function makeInfluencer(overrides: Partial<{
     authenticity_score: overrides.authenticity_score ?? 80,
     tier: overrides.tier ?? "micro",
     engagement_rate: overrides.engagement_rate ?? 0.03,
+    follower_count: overrides.follower_count ?? 10000,
+    representative_images: overrides.representative_images ?? ["img1.jpg", "img2.jpg", "img3.jpg"],
     content_categories: overrides.content_categories ?? ["Fashion", "Lifestyle"],
   };
 }

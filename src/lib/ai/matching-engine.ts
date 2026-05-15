@@ -5,6 +5,7 @@ export interface MatchResult {
   handle: string;
   platform: string;
   displayName: string | null;
+  profileImageUrl: string | null;
   matchScore: number;
   aestheticMatch: number;
   tierCompatibility: number;
@@ -13,28 +14,63 @@ export interface MatchResult {
   vibeScore: number;
   tier: string;
   engagementRate: number;
+  followerCount: number;
   matchReason: string;
+  oneLiner: string | null;
+  contentCategories: string[];
+  contentTopics: string[];
+  topHashtags: string[];
+  representativeImages: string[];
+  trendDirection: string | null;
+  trendMagnitude: number;
+  isLightProfile?: boolean;
+  aiSuggestionReason?: string | null;
+  confidenceLevel: "high" | "medium" | "low";
+  discoveryStatus?: string | null;
 }
 
-interface InfluencerForMatch {
+export interface InfluencerForMatch {
   id: string;
   handle: string;
   platform: string;
   display_name: string | null;
+  profile_image_url?: string | null;
   aesthetic_vector: number[] | null;
   vibe_score: number | null;
   engagement_score: number | null;
   authenticity_score: number | null;
   tier: string | null;
   engagement_rate: number | null;
+  follower_count?: number | null;
   content_categories: string[];
+  content_topics?: string[];
+  top_hashtags?: string[];
+  representative_images?: string[];
+  one_liner?: string | null;
+  trend_direction?: string | null;
+  trend_magnitude?: number | null;
   similarity?: number;
+  discovery_status?: string | null;
+  text_match_score?: number | null;
+  aesthetic_description?: string | null;
+  ai_suggestion_reason?: string | null;
 }
 
 interface BrandCriteria {
   toneVector: number[];
   preferredTiers: string[];
   targetCategories: string[];
+  idealInfluencerProfile?: Record<string, unknown>;
+}
+
+/**
+ * Quality gate — filter out ghost/empty accounts before scoring.
+ */
+function passesQualityGate(inf: InfluencerForMatch): boolean {
+  if ((inf.follower_count ?? 0) < 300) return false;
+  if ((inf.representative_images?.length ?? 0) < 3) return false;
+  if ((inf.engagement_rate ?? 0) <= 0) return false;
+  return true;
 }
 
 export function calculateMatchScores(
@@ -42,13 +78,23 @@ export function calculateMatchScores(
   brand: BrandCriteria
 ): MatchResult[] {
   return influencers
+    .filter(passesQualityGate)
     .map((inf) => {
-      // Aesthetic Match (45%)
+      const status = inf.discovery_status ?? "full";
+      const isLight = status === "light";
+      const isStub = status === "stub";
+
+      // Lower defaults for unverified profiles
+      const defaultAesthetic = status === "full" ? 50 : 30;
+      const defaultAuthenticity = status === "full" ? 50 : 25;
+      const defaultEngagement = status === "full" ? 50 : 25;
+
+      // Aesthetic Match (45%) — use vector if available, then text_match_score, then default
       const aestheticMatch = inf.aesthetic_vector
         ? normalizeCosineSimilarity(
             cosineSimilarity(brand.toneVector, inf.aesthetic_vector)
           )
-        : 50;
+        : (inf.text_match_score ?? defaultAesthetic);
 
       // Tier Compatibility (20%)
       const tierCompatibility =
@@ -67,22 +113,34 @@ export function calculateMatchScores(
           : Math.min(100, (overlap / Math.max(1, brand.targetCategories.length)) * 100);
 
       // Quality Filter (15%)
-      const authenticity = Number(inf.authenticity_score ?? 50);
-      const engagement = Number(inf.engagement_score ?? 50);
+      const authenticity = Number(inf.authenticity_score ?? defaultAuthenticity);
+      const engagement = Number(inf.engagement_score ?? defaultEngagement);
       const qualityFilter =
         authenticity >= 60 && engagement >= 40 ? 100 : Math.min(authenticity, engagement);
 
-      // Composite
-      const matchScore = Math.round(
+      // Raw composite
+      const rawScore =
         aestheticMatch * 0.45 +
-          tierCompatibility * 0.2 +
-          categoryAlignment * 0.2 +
-          qualityFilter * 0.15
-      );
+        tierCompatibility * 0.2 +
+        categoryAlignment * 0.2 +
+        qualityFilter * 0.15;
+
+      // Profile completeness correction
+      const completeness = status === "full" ? 1.0
+        : status === "light" ? 0.85
+        : 0.65; // stub
+
+      const matchScore = Math.round(rawScore * completeness);
+
+      // Confidence level
+      const confidenceLevel: "high" | "medium" | "low" =
+        status === "full" ? "high"
+        : status === "light" ? "medium"
+        : "low";
 
       // Generate match reason
       const reasons: string[] = [];
-      if (aestheticMatch >= 70) reasons.push("브랜드 미적 톤과 높은 유사도");
+      if (aestheticMatch >= 70) reasons.push("브랜드 톤 일치도 " + Math.round(aestheticMatch) + "%");
       if (tierCompatibility === 100 && brand.preferredTiers.length > 0)
         reasons.push("선호 티어에 부합");
       if (categoryAlignment >= 60 && brand.targetCategories.length > 0)
@@ -95,6 +153,7 @@ export function calculateMatchScores(
         handle: inf.handle,
         platform: inf.platform,
         displayName: inf.display_name,
+        profileImageUrl: inf.profile_image_url ?? null,
         matchScore,
         aestheticMatch: Math.round(aestheticMatch),
         tierCompatibility,
@@ -103,7 +162,19 @@ export function calculateMatchScores(
         vibeScore: Number(inf.vibe_score ?? 0),
         tier: inf.tier ?? "unknown",
         engagementRate: Number(inf.engagement_rate ?? 0),
+        followerCount: Number(inf.follower_count ?? 0),
         matchReason: reasons.join(" · "),
+        oneLiner: inf.one_liner ?? null,
+        contentCategories: inf.content_categories ?? [],
+        contentTopics: inf.content_topics ?? [],
+        topHashtags: (inf.top_hashtags ?? []).slice(0, 5),
+        representativeImages: (inf.representative_images ?? []).slice(0, 3),
+        trendDirection: inf.trend_direction ?? null,
+        trendMagnitude: Number(inf.trend_magnitude ?? 0),
+        isLightProfile: isLight || isStub,
+        aiSuggestionReason: inf.ai_suggestion_reason ?? null,
+        confidenceLevel,
+        discoveryStatus: status,
       };
     })
     .sort((a, b) => b.matchScore - a.matchScore);

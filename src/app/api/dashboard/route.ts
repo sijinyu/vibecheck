@@ -5,7 +5,60 @@ import {
   getUserSavedInfluencers,
 } from "@/lib/supabase/queries";
 
-export async function GET() {
+/** DELETE /api/dashboard — delete analysis records */
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await tryCreateClient();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: { message: "서비스를 사용할 수 없습니다" } },
+        { status: 503 }
+      );
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: { message: "로그인이 필요합니다" } },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { analysisIds } = body;
+
+    if (!analysisIds || !Array.isArray(analysisIds) || analysisIds.length === 0) {
+      return NextResponse.json(
+        { error: { message: "삭제할 분석 ID를 지정해주세요" } },
+        { status: 400 }
+      );
+    }
+
+    // Only delete user's own analyses
+    const { error } = await supabase
+      .from("analyses")
+      .delete()
+      .eq("user_id", user.id)
+      .in("id", analysisIds);
+
+    if (error) {
+      console.error("[dashboard] delete error:", error.message);
+      return NextResponse.json(
+        { error: { message: "삭제에 실패했습니다" } },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ data: { deleted: analysisIds.length } });
+  } catch {
+    return NextResponse.json(
+      { error: { message: "삭제에 실패했습니다" } },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request: Request) {
   try {
     const supabase = await tryCreateClient();
 
@@ -24,10 +77,21 @@ export async function GET() {
       );
     }
 
-    const [analyses, saved] = await Promise.all([
-      getUserAnalyses(supabase, user.id),
-      getUserSavedInfluencers(supabase, user.id),
-    ]);
+    // Parse date range filter
+    const url = new URL(request.url);
+    const dateFrom = url.searchParams.get("dateFrom");
+    const dateTo = url.searchParams.get("dateTo");
+
+    const allAnalyses = await getUserAnalyses(supabase, user.id);
+    const saved = await getUserSavedInfluencers(supabase, user.id);
+
+    // Filter analyses by date range
+    const analyses = allAnalyses.filter((a) => {
+      const createdAt = new Date(a.created_at).getTime();
+      if (dateFrom && createdAt < new Date(dateFrom).getTime()) return false;
+      if (dateTo && createdAt > new Date(dateTo).getTime() + 86400000) return false;
+      return true;
+    });
 
     // Aggregate stats
     const vibeScores = analyses

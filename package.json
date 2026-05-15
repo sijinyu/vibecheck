@@ -10,7 +10,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "analyze": "ANALYZE=true next build"
+    "analyze": "ANALYZE=true next build",
+    "pipeline": "tsx scripts/pipeline.ts",
+    "pipeline:check": "tsx scripts/pipeline.ts --check",
+    "pipeline:deploy": "tsx scripts/pipeline.ts --deploy-only",
+    "pipeline:seed": "tsx scripts/pipeline.ts --seed-only",
+    "seed": "tsx scripts/seed-crawler.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -41,11 +46,13 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.1",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.5",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.3",
     "tailwindcss": "^4",
+    "tsx": "^4.22.0",
     "typescript": "^5",
     "vitest": "^4.1.5"
   }

@@ -60,9 +60,10 @@ export async function fetchTikTokFeed(
 
   const apiKey = process.env.RAPIDAPI_KEY;
 
-  // No API key → fallback to mock
   if (!apiKey) {
-    return { data: generateMockTikTokData(cleanHandle) };
+    return {
+      error: { code: "SCRAPE_FAILED", message: "TikTok API가 설정되지 않았습니다. 관리자에게 문의하세요." },
+    };
   }
 
   try {
@@ -78,7 +79,7 @@ export async function fetchTikTokFeed(
         }
       ),
       fetch(
-        `https://${RAPIDAPI_HOST}/user/posts?unique_id=${encodeURIComponent(cleanHandle)}&count=12`,
+        `https://${RAPIDAPI_HOST}/user/posts?unique_id=${encodeURIComponent(cleanHandle)}&count=50`,
         {
           headers: {
             "x-rapidapi-key": apiKey,
@@ -118,13 +119,12 @@ export async function fetchTikTokFeed(
     }
 
     const feedData = transformTikTokResponse(cleanHandle, userInfo, videos);
-    return { data: feedData };
+    return { data: { ...feedData, dataSource: "live" as const } };
   } catch (error) {
-    console.error(
-      "[tiktok adapter] RapidAPI error, falling back to mock:",
-      error
-    );
-    return { data: generateMockTikTokData(cleanHandle) };
+    console.error("[tiktok adapter] RapidAPI error:", error);
+    return {
+      error: { code: "SCRAPE_FAILED", message: "TikTok 데이터를 가져올 수 없습니다. 잠시 후 다시 시도해주세요." },
+    };
   }
 }
 
@@ -132,7 +132,7 @@ function transformTikTokResponse(
   handle: string,
   userInfo: TikTokUserInfo,
   videos: TikTokVideoItem[]
-): FeedData {
+): Omit<FeedData, "dataSource"> {
   const user = userInfo.user;
   const stats = userInfo.stats;
 
@@ -176,53 +176,3 @@ function transformTikTokResponse(
   return { profile, posts };
 }
 
-// ─── Mock fallback ────────────────────────────────────────────
-
-function generateMockTikTokData(handle: string): FeedData {
-  const hashCode = handle
-    .split("")
-    .reduce((acc, char) => acc * 37 + char.charCodeAt(0), 0);
-  const seed = Math.abs(hashCode);
-
-  const followerCount = 50000 + (seed % 4950000);
-  const postCount = 30 + (seed % 1500);
-
-  const categories = [
-    "Dance",
-    "Comedy",
-    "Fashion",
-    "Food",
-    "Beauty",
-    "Lifestyle",
-  ];
-  const category = categories[seed % categories.length];
-
-  const posts = Array.from({ length: 12 }, (_, i) => ({
-    imageUrl: `https://picsum.photos/seed/tt${handle}${i}/640/1136`,
-    caption: `${category} content ${["🔥", "💃", "✨", "🎵", "💄", "🌟"][i % 6]} #${category.toLowerCase()} #fyp #viral`,
-    hashtags: [category.toLowerCase(), "fyp", "viral", "tiktok"],
-    likeCount: 500 + ((seed + i * 211) % 99500),
-    commentCount: 10 + ((seed + i * 67) % 990),
-    shareCount: 5 + ((seed + i * 43) % 495),
-    playCount: 10000 + ((seed + i * 331) % 990000),
-    postType: "video" as const,
-    timestamp: new Date(
-      Date.now() - i * 2 * 24 * 60 * 60 * 1000
-    ).toISOString(),
-  }));
-
-  return {
-    profile: {
-      handle,
-      platform: "tiktok",
-      displayName:
-        handle.charAt(0).toUpperCase() + handle.slice(1).replace(/_/g, " "),
-      profileImageUrl: `https://picsum.photos/seed/tt${handle}pfp/200/200`,
-      bio: `${category} creator on TikTok 🎬`,
-      followerCount,
-      followingCount: 100 + (seed % 900),
-      postCount,
-    },
-    posts,
-  };
-}

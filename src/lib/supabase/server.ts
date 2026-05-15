@@ -1,5 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
-import { type SupabaseClient } from "@supabase/supabase-js";
+import { createClient as createRawClient, type SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 export async function createClient() {
@@ -35,6 +35,24 @@ export async function createClient() {
       },
     }
   );
+}
+
+/**
+ * Returns a Supabase admin client using service role key (bypasses RLS).
+ * Use for cron jobs, background tasks, and server-only operations.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createServiceClient(): SupabaseClient<any> | null {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return null;
+  }
+
+  return createRawClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 }
 
 /**

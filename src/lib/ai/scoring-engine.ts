@@ -10,15 +10,24 @@ export interface AestheticScores {
   styleOriginality: number;
 }
 
+export type AiSource = "gemini" | "openai";
+
 export interface AnalysisResult {
   scores: AestheticScores;
   representativeImages: string[];
   aestheticVector: number[];
   summary: string;
+  aiSource: AiSource;
+  oneLiner: string;
+  contentTopics: string[];
 }
 
 const ANALYSIS_PROMPT = `You are an expert visual aesthetics analyst for social media content.
-Analyze the following Instagram feed images and provide a comprehensive aesthetic assessment.
+Analyze the following Instagram account and provide a comprehensive aesthetic assessment.
+
+## CRITICAL: Read the account's BIO and PROFILE info provided below the images.
+The bio is the account owner's self-description — use it to understand the account's identity, industry, and purpose.
+Your summary and contentTopics MUST be consistent with what the bio says.
 
 Score each dimension from 0-100:
 1. **color** — Color harmony, palette consistency, saturation balance
@@ -31,11 +40,21 @@ Also provide:
 - An **overall** aesthetic score (0-100), weighted average favoring consistency and originality
 - A **summary** in Korean (2-3 sentences). This summary is for brand marketers evaluating influencer partnerships.
   Write it like a talent scout's brief — be specific and opinionated:
+  - FIRST, state what this account is about based on the bio (e.g. "스킨케어 전문 인플루언서", "서울 기반 카페 리뷰어", "패션 브랜드 공식 계정")
   - Name the dominant color palette (e.g. "차분한 베이지-크림 톤", "채도 높은 네온 컬러")
   - Identify the content style (e.g. "미니멀 플랫레이 중심", "스트릿 스냅 위주", "감성 카페 투어")
-  - State what kind of brand collaboration would fit (e.g. "클린뷰티/스킨케어 브랜드와 궁합이 좋을 피드", "스트리트 패션 브랜드 협업에 적합")
-  - If there's a weakness, mention it briefly (e.g. "다만 최근 포스팅 톤이 다소 흔들리는 편")
+  - State what kind of brand collaboration would fit
+  - If there's a weakness, mention it briefly
   Do NOT use generic phrases like "일관된 톤과 독특한 미적 감각이 돋보이는 계정입니다" — be concrete.
+- A **oneLiner** in Korean: One punchy sentence (max 40 chars) summarizing this account for a recommendation card.
+  Must reflect the bio's description of the account.
+  Format: "[핵심 정체성], [타겟 오디언스], [핵심 강점]"
+  Examples: "미니멀 뷰티의 정석, 20대 여성 팔로워, 참여율 상위 5%"
+  "유머러스한 먹방 크리에이터, 가족 오디언스, 월 성장률 12%"
+- A **contentTopics** array of 3-5 specific content sub-topics (in Korean) that describe this account's niche.
+  Must be derived from BOTH the bio AND the actual post content.
+  NOT broad categories like "Fashion" — use specific sub-topics.
+  Examples: ["미니멀 데일리룩", "스트릿 패션", "명품 언박싱"] or ["홈카페 레시피", "비건 디저트", "카페 투어"]
 - A **vector** of 10 float values between 0 and 1 representing the aesthetic fingerprint:
   [warmth, saturation, contrast, minimalism, nature, urban, fashion, moody, bright, editorial]
 
@@ -48,39 +67,50 @@ Respond ONLY with valid JSON in this exact format:
   "trend": number,
   "styleOriginality": number,
   "summary": "string",
+  "oneLiner": "string",
+  "contentTopics": ["string", "string", "string"],
   "vector": [number, number, number, number, number, number, number, number, number, number]
 }`;
 
+export interface IdentityContext {
+  identity: string;
+  industry: string;
+  targetAudience: string;
+  coreValues: string[];
+}
+
 export async function analyzeAesthetics(
-  feedData: FeedData
+  feedData: FeedData,
+  identityContext?: IdentityContext | null
 ): Promise<AnalysisResult> {
   const googleApiKey = process.env.GOOGLE_API_KEY;
   const openaiApiKey = process.env.OPENAI_API_KEY;
 
-  // Priority: Gemini (free) > OpenAI (paid) > Mock
+  // Priority: Gemini (free) > OpenAI (paid)
   if (googleApiKey) {
-    return analyzeWithGemini(feedData, googleApiKey);
+    return analyzeWithGemini(feedData, googleApiKey, identityContext);
   }
 
   if (openaiApiKey) {
-    return analyzeWithOpenAI(feedData, openaiApiKey);
+    return analyzeWithOpenAI(feedData, openaiApiKey, identityContext);
   }
 
-  return generateMockAnalysis(feedData);
+  throw new Error("AI API가 설정되지 않았습니다. GOOGLE_API_KEY 또는 OPENAI_API_KEY를 설정해주세요.");
 }
 
 // ─── Gemini 2.5 Flash (free tier) ──────────────────────────────
 
 async function analyzeWithGemini(
   feedData: FeedData,
-  apiKey: string
+  apiKey: string,
+  identityContext?: IdentityContext | null
 ): Promise<AnalysisResult> {
-  const selectedPosts = selectRepresentativePosts(feedData.posts, 6);
+  const selectedPosts = selectRepresentativePosts(feedData.posts, 20);
   const imageUrls = selectedPosts.map((post) => post.imageUrl);
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-05-20" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // Fetch images and convert to inline data for Gemini
     const imageParts = await Promise.all(
@@ -104,16 +134,19 @@ async function analyzeWithGemini(
     );
 
     if (validImageParts.length === 0) {
-      console.error("[scoring-engine] No images could be fetched, falling back to mock");
-      return generateMockAnalysis(feedData);
+      throw new Error("이미지를 가져올 수 없습니다. 인플루언서의 피드 이미지가 접근 가능한지 확인해주세요.");
     }
 
-    const contextText = `Account: @${feedData.profile.handle}\nBio: ${feedData.profile.bio ?? "N/A"}\nFollowers: ${feedData.profile.followerCount}\nPosts analyzed: ${validImageParts.length}`;
+    const identityBlock = identityContext
+      ? `═══ CONFIRMED IDENTITY (GROUND TRUTH — do NOT contradict) ═══\n정체성: ${identityContext.identity}\n업종: ${identityContext.industry}\n타깃: ${identityContext.targetAudience}\n핵심 가치: ${identityContext.coreValues.join(", ")}\n\n`
+      : "";
+
+    const contextText = `${identityBlock}═══ ACCOUNT PROFILE ═══\nHandle: @${feedData.profile.handle}\nDisplay Name: ${feedData.profile.displayName ?? feedData.profile.handle}\nBio: "${feedData.profile.bio ?? "N/A"}"\nFollowers: ${feedData.profile.followerCount.toLocaleString()}\nFollowing: ${feedData.profile.followingCount.toLocaleString()}\nTotal Posts: ${feedData.profile.postCount}\nImages analyzed: ${validImageParts.length}`;
 
     const result = await model.generateContent([
       ANALYSIS_PROMPT,
-      ...validImageParts,
       contextText,
+      ...validImageParts,
     ]);
 
     const text = result.response.text();
@@ -142,10 +175,13 @@ async function analyzeWithGemini(
       representativeImages: imageUrls,
       aestheticVector,
       summary: parsed.summary ?? "",
+      oneLiner: parsed.oneLiner ?? "",
+      contentTopics: Array.isArray(parsed.contentTopics) ? parsed.contentTopics : [],
+      aiSource: "gemini" as const,
     };
   } catch (error) {
-    console.error("[scoring-engine] Gemini analysis failed, falling back to mock:", error);
-    return generateMockAnalysis(feedData);
+    console.error("[scoring-engine] Gemini analysis failed:", error);
+    throw error;
   }
 }
 
@@ -153,13 +189,14 @@ async function analyzeWithGemini(
 
 async function analyzeWithOpenAI(
   feedData: FeedData,
-  apiKey: string
+  apiKey: string,
+  identityContext?: IdentityContext | null
 ): Promise<AnalysisResult> {
   // Dynamic import to avoid bundling openai when not used
   const OpenAI = (await import("openai")).default;
   const openai = new OpenAI({ apiKey });
 
-  const selectedPosts = selectRepresentativePosts(feedData.posts, 6);
+  const selectedPosts = selectRepresentativePosts(feedData.posts, 20);
   const imageUrls = selectedPosts.map((post) => post.imageUrl);
 
   try {
@@ -179,7 +216,7 @@ async function analyzeWithOpenAI(
             ),
             {
               type: "text",
-              text: `Account: @${feedData.profile.handle}\nBio: ${feedData.profile.bio ?? "N/A"}\nFollowers: ${feedData.profile.followerCount}\nPosts analyzed: ${selectedPosts.length}`,
+              text: `${identityContext ? `═══ CONFIRMED IDENTITY (GROUND TRUTH) ═══\n정체성: ${identityContext.identity}\n업종: ${identityContext.industry}\n타깃: ${identityContext.targetAudience}\n핵심 가치: ${identityContext.coreValues.join(", ")}\n\n` : ""}═══ ACCOUNT PROFILE ═══\nHandle: @${feedData.profile.handle}\nDisplay Name: ${feedData.profile.displayName ?? feedData.profile.handle}\nBio: "${feedData.profile.bio ?? "N/A"}"\nFollowers: ${feedData.profile.followerCount.toLocaleString()}\nFollowing: ${feedData.profile.followingCount.toLocaleString()}\nTotal Posts: ${feedData.profile.postCount}\nImages analyzed: ${selectedPosts.length}`,
             },
           ],
         },
@@ -210,12 +247,17 @@ async function analyzeWithOpenAI(
       representativeImages: imageUrls,
       aestheticVector,
       summary: parsed.summary ?? "",
+      oneLiner: parsed.oneLiner ?? "",
+      contentTopics: Array.isArray(parsed.contentTopics) ? parsed.contentTopics : [],
+      aiSource: "openai" as const,
     };
   } catch (error) {
-    console.error("[scoring-engine] OpenAI analysis failed, falling back to mock:", error);
-    return generateMockAnalysis(feedData);
+    console.error("[scoring-engine] OpenAI analysis failed:", error);
+    throw error;
   }
 }
+
+export { selectRepresentativePosts };
 
 // ─── Moodboard Analysis (Brand) ──────────────────────────────
 
@@ -259,7 +301,7 @@ export async function analyzeMoodboard(
     return analyzeMoodboardWithGemini(imageBuffers, googleApiKey);
   }
 
-  return generateMockMoodboardAnalysis();
+  throw new Error("무드보드 분석을 위해 GOOGLE_API_KEY가 필요합니다.");
 }
 
 async function analyzeMoodboardWithGemini(
@@ -269,7 +311,7 @@ async function analyzeMoodboardWithGemini(
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash-preview-05-20",
+      model: "gemini-2.5-flash",
     });
 
     const imageParts = imageBuffers.map((img) => ({
@@ -307,38 +349,14 @@ async function analyzeMoodboardWithGemini(
       representativeImages: [],
       aestheticVector,
       summary: parsed.summary ?? "",
+      oneLiner: "",
+      contentTopics: [],
+      aiSource: "gemini" as const,
     };
   } catch (error) {
-    console.error(
-      "[scoring-engine] Moodboard Gemini analysis failed, falling back to mock:",
-      error
-    );
-    return generateMockMoodboardAnalysis();
+    console.error("[scoring-engine] Moodboard Gemini analysis failed:", error);
+    throw error;
   }
-}
-
-function generateMockMoodboardAnalysis(): AnalysisResult {
-  const seed = Date.now() % 10000;
-  const color = 70 + (seed % 25);
-  const composition = 65 + ((seed * 7) % 30);
-  const toneConsistency = 75 + ((seed * 13) % 20);
-  const trend = 65 + ((seed * 17) % 25);
-  const styleOriginality = 60 + ((seed * 23) % 30);
-  const overall = Math.round(
-    color * 0.2 + composition * 0.2 + toneConsistency * 0.25 + trend * 0.15 + styleOriginality * 0.2
-  );
-
-  const vector = Array.from({ length: 10 }, (_, i) =>
-    Number(((seed * (i + 1) * 0.1) % 1).toFixed(3))
-  );
-
-  return {
-    scores: { overall, color, composition, toneConsistency, trend, styleOriginality },
-    representativeImages: [],
-    aestheticVector: padVector(vector, 512),
-    summary:
-      "웜톤 베이지-테라코타 팔레트를 기반으로 한 미니멀하면서도 따뜻한 브랜드 무드. 자연광과 오가닉 텍스처를 활용한 감성 콘텐츠 제작에 적합한 인플루언서와 궁합이 좋을 것으로 분석됩니다.",
-  };
 }
 
 // ─── Shared utilities ──────────────────────────────────────────
@@ -364,68 +382,3 @@ function padVector(shortVector: number[], targetLength: number): number[] {
   return result;
 }
 
-function generateMockAnalysis(feedData: FeedData): AnalysisResult {
-  const handle = feedData.profile.handle;
-  const seed = handle
-    .split("")
-    .reduce((acc, char) => acc * 31 + char.charCodeAt(0), 0);
-  const s = Math.abs(seed);
-
-  const color = 65 + (s % 30);
-  const composition = 60 + ((s * 7) % 35);
-  const toneConsistency = 55 + ((s * 13) % 40);
-  const trend = 60 + ((s * 17) % 30);
-  const styleOriginality = 58 + ((s * 23) % 35);
-  const overall = Math.round(
-    color * 0.2 +
-      composition * 0.2 +
-      toneConsistency * 0.25 +
-      trend * 0.15 +
-      styleOriginality * 0.2
-  );
-
-  const vector = Array.from({ length: 10 }, (_, i) =>
-    Number(((s * (i + 1) * 0.1) % 1).toFixed(3))
-  );
-
-  return {
-    scores: { overall, color, composition, toneConsistency, trend, styleOriginality },
-    representativeImages: feedData.posts.slice(0, 6).map((p) => p.imageUrl),
-    aestheticVector: padVector(vector, 512),
-    summary: generateMockSummary(feedData),
-  };
-}
-
-function generateMockSummary(feedData: FeedData): string {
-  const { handle, followerCount } = feedData.profile;
-  const hashtags = feedData.posts.flatMap((p) => p.hashtags);
-  const hashtagSet = new Set(hashtags.map((h) => h.toLowerCase()));
-
-  const palettes = ["웜톤 베이지-브라운", "쿨톤 블루-그레이", "고채도 비비드 컬러", "무채색 모노톤", "파스텔 핑크-라벤더"];
-  const styles = ["미니멀 플랫레이 중심", "라이프스타일 스냅 위주", "감성 카페·공간 투어형", "OOTD 스트릿 스냅 중심", "제품 클로즈업 위주"];
-  const fits = [
-    "클린뷰티·스킨케어 브랜드와 궁합이 좋을 피드",
-    "F&B·카페 브랜드 협업에 적합한 분위기",
-    "스트리트 패션·스니커즈 브랜드에 어울리는 무드",
-    "리빙·인테리어 브랜드 콜라보에 적합",
-    "프리미엄 뷰티·향수 브랜드와 톤이 맞는 계정",
-  ];
-
-  const seed = handle.split("").reduce((acc, c) => acc * 31 + c.charCodeAt(0), 0);
-  const s = Math.abs(seed);
-
-  const palette = palettes[s % palettes.length];
-  const style = styles[(s * 7) % styles.length];
-  const fit = fits[(s * 13) % fits.length];
-
-  const sizeLabel = followerCount >= 100000 ? "매크로" : followerCount >= 10000 ? "마이크로" : "나노";
-
-  const hasFashion = hashtagSet.has("fashion") || hashtagSet.has("ootd") || hashtagSet.has("패션");
-  const hasFood = hashtagSet.has("food") || hashtagSet.has("cafe") || hashtagSet.has("맛집");
-
-  let detail = "";
-  if (hasFashion) detail = " 패션 콘텐츠 비중이 높아 의류·액세서리 캠페인에 즉시 활용 가능.";
-  else if (hasFood) detail = " 음식·공간 콘텐츠가 강점이라 F&B 브랜드 시딩에 효과적.";
-
-  return `${palette} 팔레트의 ${style}으로 구성된 ${sizeLabel} 인플루언서. ${fit}.${detail}`;
-}

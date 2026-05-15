@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { getBenchmark, type InfluencerTier, type Platform } from "@/lib/ai/vibe-score-engine";
 
 interface BenchmarkBarProps {
   label: string;
@@ -56,27 +57,29 @@ export function BenchmarkBar({
 interface TierBenchmarkCardProps {
   engagementRate: number;
   tier: string;
+  platform?: string;
+  categories?: string[];
   avgLikesPerPost: number;
   avgCommentsPerPost: number;
+  platformBenchmark?: number;
   className?: string;
 }
-
-const TIER_ER_BENCHMARKS: Record<string, number> = {
-  nano: 0.05,
-  micro: 0.03,
-  mid: 0.02,
-  macro: 0.015,
-  mega: 0.007,
-};
 
 export function TierBenchmarkCard({
   engagementRate,
   tier,
+  platform = "instagram",
+  categories = [],
   avgLikesPerPost,
   avgCommentsPerPost,
+  platformBenchmark,
   className,
 }: TierBenchmarkCardProps) {
-  const erBenchmark = TIER_ER_BENCHMARKS[tier] ?? 0.02;
+  const erBenchmark = platformBenchmark ?? getBenchmark(
+    platform as Platform,
+    tier as InfluencerTier,
+    categories
+  );
 
   return (
     <Card className={`border-border/50 bg-card/50 ${className ?? ""}`}>

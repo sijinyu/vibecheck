@@ -78,11 +78,11 @@ export function generateInfluencerReport(data: ReportData): jsPDF {
     y += 8;
 
     const vibeScores = [
-      { label: "Aesthetic", value: data.scores.overall, weight: "40%" },
-      { label: "Engagement", value: data.vibeScore.engagementScore, weight: "25%" },
+      { label: "Aesthetic", value: data.scores.overall, weight: "25%" },
+      { label: "Engagement", value: data.vibeScore.engagementScore, weight: "30%" },
       { label: "Consistency", value: data.vibeScore.consistencyScore, weight: "15%" },
-      { label: "Growth Potential", value: data.vibeScore.growthPotentialScore, weight: "10%" },
-      { label: "Authenticity", value: data.vibeScore.authenticityScore, weight: "10%" },
+      { label: "Growth Potential", value: data.vibeScore.growthPotentialScore, weight: "15%" },
+      { label: "Authenticity", value: data.vibeScore.authenticityScore, weight: "15%" },
     ];
 
     for (const s of vibeScores) {

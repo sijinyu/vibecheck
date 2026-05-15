@@ -43,6 +43,7 @@ function makeFeedData(overrides: Partial<{
       postCount: posts.length,
     },
     posts,
+    dataSource: "live" as const,
   };
 }
 
@@ -72,10 +73,19 @@ describe("calculateVibeScore", () => {
     expect(result).toHaveProperty("engagementRate");
     expect(result).toHaveProperty("avgLikesPerPost");
     expect(result).toHaveProperty("avgCommentsPerPost");
+    expect(result).toHaveProperty("avgSharesPerPost");
+    expect(result).toHaveProperty("avgPlaysPerPost");
     expect(result).toHaveProperty("postingFrequencyDays");
     expect(result).toHaveProperty("topHashtags");
     expect(result).toHaveProperty("contentCategories");
     expect(result).toHaveProperty("insights");
+    expect(result).toHaveProperty("postPerformances");
+    expect(result).toHaveProperty("contentTypeBreakdown");
+    expect(result).toHaveProperty("trendDirection");
+    expect(result).toHaveProperty("trendMagnitude");
+    expect(result).toHaveProperty("estimatedCPE");
+    expect(result).toHaveProperty("contentEffectivenessScore");
+    expect(result).toHaveProperty("platformBenchmark");
   });
 
   it("scores are within 0-100 range", () => {
@@ -250,13 +260,13 @@ describe("calculateVibeScore", () => {
     const feedData = makeFeedData({});
     const result = calculateVibeScore(feedData, baseAestheticScores);
 
-    // VibeScore = Aesthetic×0.4 + Engagement×0.25 + Consistency×0.15 + Growth×0.1 + Authenticity×0.1
+    // VibeScore = Aesthetic×0.25 + Engagement×0.30 + Consistency×0.15 + Growth×0.15 + Authenticity×0.15
     const expected = Math.round(
-      baseAestheticScores.overall * 0.4 +
-        result.engagementScore * 0.25 +
+      baseAestheticScores.overall * 0.25 +
+        result.engagementScore * 0.30 +
         result.consistencyScore * 0.15 +
-        result.growthPotentialScore * 0.1 +
-        result.authenticityScore * 0.1
+        result.growthPotentialScore * 0.15 +
+        result.authenticityScore * 0.15
     );
 
     // Allow ±1 rounding difference
@@ -325,6 +335,7 @@ describe("calculateVibeScore", () => {
         postCount: 0,
       },
       posts: [],
+      dataSource: "live",
     };
 
     const result = calculateVibeScore(feedData, baseAestheticScores);

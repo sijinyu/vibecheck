@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, MessageCircle, Calendar, TrendingUp } from "lucide-react";
+import { Heart, MessageCircle, Calendar, TrendingUp, Share2, Play, DollarSign } from "lucide-react";
 
 interface EngagementMetricsCardProps {
   engagementRate: number;
@@ -9,6 +9,10 @@ interface EngagementMetricsCardProps {
   avgCommentsPerPost: number;
   postingFrequencyDays: number;
   followerCount: number;
+  avgSharesPerPost?: number;
+  avgPlaysPerPost?: number;
+  estimatedCPE?: number | null;
+  platform?: string;
   className?: string;
 }
 
@@ -24,6 +28,10 @@ export function EngagementMetricsCard({
   avgCommentsPerPost,
   postingFrequencyDays,
   followerCount,
+  avgSharesPerPost = 0,
+  avgPlaysPerPost = 0,
+  estimatedCPE,
+  platform,
   className,
 }: EngagementMetricsCardProps) {
   const metrics = [
@@ -48,6 +56,32 @@ export function EngagementMetricsCard({
       value: postingFrequencyDays > 0 ? `${postingFrequencyDays}일` : "-",
     },
   ];
+
+  // TikTok-specific: shares & plays
+  if (platform === "tiktok" || avgSharesPerPost > 0) {
+    metrics.push({
+      icon: Share2,
+      label: "평균 공유",
+      value: formatNumber(avgSharesPerPost),
+    });
+  }
+
+  if (platform === "tiktok" || avgPlaysPerPost > 0) {
+    metrics.push({
+      icon: Play,
+      label: "평균 조회수",
+      value: avgPlaysPerPost > 0 ? formatNumber(avgPlaysPerPost) : "-",
+    });
+  }
+
+  // CPE metric
+  if (estimatedCPE != null && estimatedCPE > 0) {
+    metrics.push({
+      icon: DollarSign,
+      label: "예상 CPE",
+      value: `${formatNumber(estimatedCPE)}원`,
+    });
+  }
 
   return (
     <div className={`grid grid-cols-2 gap-2 ${className ?? ""}`}>

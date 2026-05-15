@@ -7,6 +7,7 @@ interface Insight {
   type: "strength" | "warning" | "opportunity";
   title: string;
   description: string;
+  evidence?: string;
 }
 
 interface InsightsListProps {
@@ -64,6 +65,11 @@ export function InsightsList({ insights, className }: InsightsListProps) {
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {insight.description}
                 </p>
+                {insight.evidence && (
+                  <p className="mt-1 rounded bg-muted/30 px-2 py-1 text-[10px] font-mono text-muted-foreground/80">
+                    {insight.evidence}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

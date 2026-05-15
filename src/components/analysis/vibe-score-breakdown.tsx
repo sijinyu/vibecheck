@@ -36,13 +36,13 @@ export function VibeScoreBreakdown({
       label: "미적 퀄리티",
       value: aestheticScore,
       color: "bg-violet-500",
-      tip: "피드의 시각적 완성도 — 색감, 구도, 톤 일관성 (40%)",
+      tip: "피드의 시각적 완성도 — 색감, 구도, 톤 일관성 (25%)",
     },
     {
       label: "인게이지먼트",
       value: engagementScore,
       color: "bg-blue-500",
-      tip: "좋아요·댓글 기반 참여율, 티어 벤치마크 대비 (25%)",
+      tip: "참여율·절대 성과·참여 품질 3차원 분석 (30%)",
     },
     {
       label: "일관성",
@@ -54,13 +54,13 @@ export function VibeScoreBreakdown({
       label: "성장 잠재력",
       value: growthPotentialScore,
       color: "bg-amber-500",
-      tip: "팔로워/팔로잉 비율, 인게이지먼트 추세 (10%)",
+      tip: "팔로워/팔로잉 비율, 인게이지먼트 추세 (15%)",
     },
     {
       label: "진정성",
       value: authenticityScore,
       color: "bg-rose-500",
-      tip: "가짜 팔로워/봇 인게이지먼트 탐지 (10%)",
+      tip: "가짜 팔로워/봇 인게이지먼트 탐지 (15%)",
     },
   ];
 

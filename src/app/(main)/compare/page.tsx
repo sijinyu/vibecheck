@@ -363,6 +363,7 @@ export default function ComparePage() {
                     handle={result.profile.handle}
                     platform={result.profile.platform}
                     displayName={result.profile.displayName}
+                    profileImageUrl={result.profile.profileImageUrl}
                     aestheticScore={result.scores.overall}
                     vibeScore={result.vibeScore?.vibeScore}
                     tier={result.vibeScore?.tier}
