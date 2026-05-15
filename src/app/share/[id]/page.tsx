@@ -9,6 +9,10 @@ import { tryCreateClient } from "@/lib/supabase/server";
 import { getAnalysisByShareToken } from "@/lib/supabase/queries";
 import { type Analysis } from "@/lib/supabase/types";
 import { getScoreGrade } from "@/lib/score-utils";
+// Server component — cannot use useI18n() hook. Using t() directly with "ko" default
+// to match the client-side SSR default locale. English locale is handled via
+// the client I18nProvider after hydration if needed.
+import { t } from "@/lib/i18n/translations";
 
 interface SharePageProps {
   params: Promise<{ id: string }>;
@@ -36,15 +40,15 @@ export async function generateMetadata({
       description: analysis.summary ?? `${scoreLabel}: ${displayScore}/100`,
       openGraph: {
         title: `@${analysis.handle} — ${scoreLabel} ${displayScore}`,
-        description: analysis.summary ?? `분석 결과를 확인해보세요.`,
+        description: analysis.summary ?? t("share.ogDesc", "ko"),
         type: "website",
       },
     };
   }
 
   return {
-    title: `분석 결과 공유 — VibeCheck`,
-    description: `VibeCheck에서 공유된 인플루언서 분석 결과입니다.`,
+    title: t("share.metaTitle", "ko"),
+    description: t("share.metaDesc", "ko"),
     openGraph: {
       title: `인플루언서 분석 결과 — VibeCheck`,
       description: `VibeScore를 확인해보세요. (ID: ${id})`,
@@ -65,19 +69,19 @@ export default async function SharePage({ params }: SharePageProps) {
             Vibe<span className="text-primary">Check</span>
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            공유된 분석 결과
+            {t("share.subtitle", "ko")}
           </p>
         </div>
 
         <Card className="w-full max-w-sm border-border/50 bg-card/50">
           <CardContent className="flex flex-col items-center gap-4 py-10">
             <p className="text-sm text-muted-foreground">
-              분석 결과를 찾을 수 없습니다
+              {t("share.notFound", "ko")}
             </p>
             <Link href="/login">
               <Button size="sm" className="gap-2">
                 <ExternalLink className="h-3.5 w-3.5" />
-                VibeCheck 시작하기
+                {t("share.cta", "ko")}
               </Button>
             </Link>
           </CardContent>
@@ -92,18 +96,18 @@ export default async function SharePage({ params }: SharePageProps) {
 
   const scores = hasVibeScore
     ? [
-        { label: "미적", value: analysis.aesthetic_score },
-        { label: "참여도", value: analysis.engagement_score },
-        { label: "일관성", value: analysis.consistency_score },
-        { label: "성장성", value: analysis.growth_potential_score },
-        { label: "진정성", value: analysis.authenticity_score },
+        { label: t("score.aesthetic", "ko"), value: analysis.aesthetic_score },
+        { label: t("score.engagement", "ko"), value: analysis.engagement_score },
+        { label: t("score.consistency", "ko"), value: analysis.consistency_score },
+        { label: t("score.growth", "ko"), value: analysis.growth_potential_score },
+        { label: t("score.authenticity", "ko"), value: analysis.authenticity_score },
       ]
     : [
-        { label: "색감", value: analysis.color_score },
-        { label: "구도", value: analysis.composition_score },
-        { label: "톤 일관성", value: analysis.tone_consistency_score },
-        { label: "트렌드", value: analysis.trend_score },
-        { label: "브랜드 적합", value: analysis.brand_fit_score },
+        { label: t("score.color", "ko"), value: analysis.color_score },
+        { label: t("score.composition", "ko"), value: analysis.composition_score },
+        { label: t("score.toneConsistency", "ko"), value: analysis.tone_consistency_score },
+        { label: t("score.trend", "ko"), value: analysis.trend_score },
+        { label: t("score.brandFit", "ko"), value: analysis.brand_fit_score },
       ];
 
   return (
@@ -113,7 +117,7 @@ export default async function SharePage({ params }: SharePageProps) {
           Vibe<span className="text-primary">Check</span>
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          공유된 분석 결과
+          {t("share.subtitle", "ko")}
         </p>
       </div>
 
@@ -189,7 +193,7 @@ export default async function SharePage({ params }: SharePageProps) {
         <Link href="/login">
           <Button size="sm" className="gap-2">
             <ExternalLink className="h-3.5 w-3.5" />
-            나도 분석해보기
+            {t("share.analyzeMe", "ko")}
           </Button>
         </Link>
       </div>

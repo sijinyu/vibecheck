@@ -14,6 +14,7 @@ import { Search, Loader2, TrendingUp, Sparkles, Zap, Crown, Hash, Heart, Message
 import { ShareButton } from "@/components/analysis/share-button";
 import { DownloadReportButton } from "@/components/analysis/download-report-button";
 import { InfluencerGridCard } from "@/components/analysis/influencer-grid-card";
+import { SkeletonList } from "@/components/ui/skeleton-card";
 import Image from "next/image";
 import { type ProfileData } from "@/lib/adapters/types";
 import { type AestheticScores } from "@/lib/ai/scoring-engine";
@@ -148,7 +149,9 @@ export default function AnalyzePage() {
         if (res.ok && json.data?.analyses) {
           setRecentAnalyses(json.data.analyses.slice(0, 6));
         }
-      } catch { /* Silently fail */ }
+      } catch {
+        console.error("[analyze] fetchRecent failed");
+      }
     }
 
     async function fetchTrending() {
@@ -156,7 +159,9 @@ export default function AnalyzePage() {
         const res = await fetch("/api/influencers/trending");
         const json = await res.json();
         if (res.ok && json.data) setTrending(json.data);
-      } catch { /* Silently fail */ }
+      } catch {
+        console.error("[analyze] fetchTrending failed");
+      }
     }
 
     async function fetchTrendingBrands() {
@@ -164,7 +169,9 @@ export default function AnalyzePage() {
         const res = await fetch("/api/brands/trending");
         const json = await res.json();
         if (res.ok && json.data) setTrendingBrands(json.data);
-      } catch { /* Silently fail */ }
+      } catch {
+        console.error("[analyze] fetchTrendingBrands failed");
+      }
     }
 
     async function fetchTrendingContent() {
@@ -172,7 +179,9 @@ export default function AnalyzePage() {
         const res = await fetch("/api/content/trending");
         const json = await res.json();
         if (res.ok && json.data) setTrendingContent(json.data);
-      } catch { /* Silently fail */ }
+      } catch {
+        console.error("[analyze] fetchTrendingContent failed");
+      }
     }
 
     async function fetchTrendingHashtags() {
@@ -180,7 +189,9 @@ export default function AnalyzePage() {
         const res = await fetch("/api/hashtags/trending");
         const json = await res.json();
         if (res.ok && json.data) setTrendingHashtags(json.data);
-      } catch { /* Silently fail */ }
+      } catch {
+        console.error("[analyze] fetchTrendingHashtags failed");
+      }
     }
 
     async function fetchCurated(type: string, setter: (data: CuratedInfluencer[]) => void) {
@@ -188,7 +199,9 @@ export default function AnalyzePage() {
         const res = await fetch(`/api/influencers/curated?type=${type}`);
         const json = await res.json();
         if (res.ok && json.data) setter(json.data);
-      } catch { /* Silently fail */ }
+      } catch {
+        console.error(`[analyze] fetchCurated(${type}) failed`);
+      }
     }
 
     async function fetchCategoryCounts() {
@@ -196,7 +209,9 @@ export default function AnalyzePage() {
         const res = await fetch("/api/influencers/category-counts");
         const json = await res.json();
         if (res.ok && json.data) setCategoryCounts(json.data);
-      } catch { /* Silently fail */ }
+      } catch {
+        console.error("[analyze] fetchCategoryCounts failed");
+      }
     }
 
     fetchRecent();
@@ -232,7 +247,7 @@ export default function AnalyzePage() {
         setBrowsePage(page);
       }
     } catch {
-      // Silently fail
+      console.error("[analyze] fetchBrowse failed");
     } finally {
       setBrowseLoading(false);
     }
@@ -293,7 +308,7 @@ export default function AnalyzePage() {
         setHashtagInfluencers(json.data);
       }
     } catch {
-      toast.error("해시태그 검색에 실패했습니다");
+      toast.error(t("discover.hashtagFetchFail"));
     } finally {
       setHashtagLoading(false);
     }
@@ -311,7 +326,7 @@ export default function AnalyzePage() {
   const isLoading = state.status === "loading";
 
   return (
-    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-4xl lg:px-8">
+    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 lg:max-w-4xl lg:px-8">
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold tracking-tight">
           Vibe<span className="text-primary">Check</span>
@@ -539,7 +554,7 @@ export default function AnalyzePage() {
           <div className="mt-8">
             <div className="mb-3 flex items-center gap-2">
               <span className="text-lg">🔍</span>
-              <h2 className="text-sm font-semibold">카테고리 탐색</h2>
+              <h2 className="text-sm font-semibold">{t("discover.categoryBrowse")}</h2>
             </div>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
               {CATEGORY_CARDS.map(({ emoji, name }) => {
@@ -562,7 +577,7 @@ export default function AnalyzePage() {
                     <span className="text-xl">{emoji}</span>
                     <span className="text-[11px] font-medium leading-tight">{name}</span>
                     {count > 0 && (
-                      <span className="text-[9px] tabular-nums opacity-60">{count.toLocaleString()}명</span>
+                      <span className="text-[9px] tabular-nums opacity-60">{count.toLocaleString()}{t("discover.countSuffix")}</span>
                     )}
                   </button>
                 );
@@ -763,13 +778,13 @@ export default function AnalyzePage() {
                 <div className="mt-4">
                   <div className="mb-3 flex items-center justify-between">
                     <p className="text-xs font-medium text-muted-foreground">
-                      <span className="text-primary">#{activeHashtag}</span> 관련 인플루언서
+                      {t("discover.hashtagInfluencers").replace("{hashtag}", `#${activeHashtag}`)}
                     </p>
                     <button
                       onClick={() => { setActiveHashtag(null); setHashtagInfluencers([]); }}
                       className="text-[10px] text-muted-foreground hover:text-foreground"
                     >
-                      닫기
+                      {t("discover.hashtagClose")}
                     </button>
                   </div>
                   {hashtagLoading ? (
@@ -800,7 +815,7 @@ export default function AnalyzePage() {
                     </div>
                   ) : (
                     <p className="py-6 text-center text-xs text-muted-foreground">
-                      해당 해시태그를 사용하는 인플루언서가 아직 없습니다
+                      {t("discover.hashtagEmpty")}
                     </p>
                   )}
                 </div>
@@ -962,8 +977,8 @@ export default function AnalyzePage() {
 
             {/* Browse Grid */}
             {browseLoading && browseResults.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                <SkeletonList count={8} variant="grid" />
               </div>
             ) : browseResults.length > 0 ? (
               <>

@@ -5,16 +5,15 @@ import { type Variants, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProfileCard } from "@/components/analysis/profile-card";
-import { Sparkles, Eye, Palette, Search, ArrowRight } from "lucide-react";
+import { Sparkles, Eye, Palette, ArrowRight } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleToggle } from "@/components/locale-toggle";
 import { useI18n } from "@/lib/i18n/context";
 
-const featureIcons = [Eye, Palette, Search] as const;
+const featureIcons = [Eye, Palette] as const;
 const featureKeys = [
   { title: "landing.feature.vibeScore.title", desc: "landing.feature.vibeScore.desc" },
   { title: "landing.feature.brandMatching.title", desc: "landing.feature.brandMatching.desc" },
-  { title: "landing.feature.vibeSearch.title", desc: "landing.feature.vibeSearch.desc" },
 ] as const;
 
 const demoData = {
@@ -113,33 +112,6 @@ export default function LandingPage() {
             {t("landing.demoLabel")}
           </p>
           <ProfileCard {...demoData} />
-        </motion.div>
-      </section>
-
-      {/* Moodboard Preview */}
-      <section className="mx-auto w-full max-w-lg px-4 pb-12">
-        <motion.div variants={itemVariants}>
-          <p className="mb-4 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {t("landing.moodboardLabel")}
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              "bg-gradient-to-br from-rose-900/40 to-pink-800/30",
-              "bg-gradient-to-br from-violet-900/40 to-purple-800/30",
-              "bg-gradient-to-br from-amber-900/40 to-orange-800/30",
-              "bg-gradient-to-br from-emerald-900/40 to-teal-800/30",
-              "bg-gradient-to-br from-sky-900/40 to-blue-800/30",
-              "bg-gradient-to-br from-fuchsia-900/40 to-pink-800/30",
-            ].map((gradient, i) => (
-              <motion.div
-                key={i}
-                className={`aspect-square rounded-xl border border-border/30 ${gradient}`}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.8 + i * 0.08, duration: 0.4 }}
-              />
-            ))}
-          </div>
         </motion.div>
       </section>
 

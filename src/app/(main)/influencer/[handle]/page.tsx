@@ -166,18 +166,18 @@ export default function InfluencerProfilePage({
       });
       if (res.ok) {
         setSavedBrands((prev) => new Set([...prev, brandId]));
-        toast.success("인플루언서가 브랜드에 저장되었습니다");
+        toast.success(t("influencer.savedToBrand"));
       } else {
         const json = await res.json();
         if (json.error?.message?.includes("duplicate") || json.error?.message?.includes("already")) {
           setSavedBrands((prev) => new Set([...prev, brandId]));
-          toast.info("이미 저장된 인플루언서입니다");
+          toast.info(t("influencer.alreadySaved"));
         } else {
-          toast.error(json.error?.message ?? "저장에 실패했습니다");
+          toast.error(json.error?.message ?? t("influencer.saveFailed"));
         }
       }
     } catch {
-      toast.error("저장에 실패했습니다");
+      toast.error(t("influencer.saveFailed"));
     } finally {
       setSavingToBrand(null);
     }
@@ -192,14 +192,14 @@ export default function InfluencerProfilePage({
         body: JSON.stringify({ handle, platform: data?.platform ?? "instagram" }),
       });
       if (res.ok) {
-        toast.success("재분석이 완료되었습니다");
+        toast.success(t("influencer.reanalyzeDone"));
         await fetchInfluencer();
       } else {
         const json = await res.json();
-        toast.error(json.error?.message ?? "재분석에 실패했습니다");
+        toast.error(json.error?.message ?? t("influencer.reanalyzeFailed"));
       }
     } catch {
-      toast.error("재분석에 실패했습니다");
+      toast.error(t("influencer.reanalyzeFailed"));
     } finally {
       setReanalyzing(false);
     }
@@ -244,7 +244,7 @@ export default function InfluencerProfilePage({
   const trendIcon = data?.trend_direction === "rising" ? "↑" : data?.trend_direction === "declining" ? "↓" : "→";
 
   return (
-    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-4xl lg:px-8">
+    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 lg:max-w-4xl lg:px-8">
       {/* Back button */}
       <Link
         href="/analyze"
@@ -328,16 +328,19 @@ export default function InfluencerProfilePage({
             )}
             {data.last_analyzed_at && (
               <span className="text-[10px] text-muted-foreground">
-                {new Date(data.last_analyzed_at).toLocaleDateString(
-                  "ko-KR",
-                  { year: "numeric", month: "short", day: "numeric" }
-                )} 분석
+                {t("influencer.analyzedAt").replace(
+                  "{date}",
+                  new Date(data.last_analyzed_at).toLocaleDateString(
+                    "ko-KR",
+                    { year: "numeric", month: "short", day: "numeric" }
+                  )
+                )}
               </span>
             )}
             {isStale && (
               <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400">
                 <AlertTriangle className="h-3 w-3" />
-                데이터가 오래되었을 수 있습니다
+                {t("influencer.dataStale")}
               </span>
             )}
           </div>
@@ -443,7 +446,7 @@ export default function InfluencerProfilePage({
             ) : (
               <RefreshCw className="h-3.5 w-3.5" />
             )}
-            재분석
+            {t("influencer.reanalyze")}
           </Button>
           </div>
 
@@ -522,7 +525,7 @@ export default function InfluencerProfilePage({
                 <Card className="border-border/50 bg-card/50">
                   <CardContent className="py-4 text-center">
                     <p className="text-xs text-muted-foreground">
-                      기본 프로필 정보만 수집된 상태입니다. &quot;재분석&quot;을 실행하면 상세 인사이트를 확인할 수 있습니다.
+                      {t("influencer.lightProfileNotice")}
                     </p>
                   </CardContent>
                 </Card>
@@ -537,7 +540,7 @@ export default function InfluencerProfilePage({
               {posts.length === 0 && galleryImages.length > 0 && (
                 <div>
                   <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    최근 게시물
+                    {t("influencer.recentPosts")}
                   </p>
                   <div className="grid grid-cols-3 gap-1.5">
                     {galleryImages.slice(0, 6).map((url, i) => (
@@ -558,7 +561,7 @@ export default function InfluencerProfilePage({
                     ))}
                   </div>
                   <p className="mt-2 text-center text-[10px] text-muted-foreground">
-                    정확한 참여 데이터를 보려면 &quot;재분석&quot;을 실행하세요
+                    {t("influencer.reanalyzeForEngagement")}
                   </p>
                 </div>
               )}
@@ -654,7 +657,7 @@ export default function InfluencerProfilePage({
                 <Card className="border-border/50 bg-card/50">
                   <CardContent className="py-4">
                     <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      내 브랜드에 저장
+                      {t("influencer.saveToBrand")}
                     </p>
                     <div className="space-y-2">
                       {brands.map((brand) => {
@@ -688,14 +691,14 @@ export default function InfluencerProfilePage({
                 <Card className="border-border/50 bg-card/50">
                   <CardContent className="py-6 text-center">
                     <Building2 className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm font-medium">브랜드를 등록하고 인플루언서를 저장하세요</p>
+                    <p className="text-sm font-medium">{t("influencer.registerBrandPrompt")}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      브랜드를 등록하면 AI가 자동으로 최적의 인플루언서를 추천해드립니다
+                      {t("influencer.registerBrandDesc")}
                     </p>
                     <Link href="/brands/new">
                       <Button className="mt-4 gap-1.5" size="sm">
                         <Plus className="h-3.5 w-3.5" />
-                        브랜드 등록하기
+                        {t("influencer.registerBrandCta")}
                       </Button>
                     </Link>
                   </CardContent>
@@ -706,7 +709,7 @@ export default function InfluencerProfilePage({
               {brands.length > 0 && (
                 <Link href="/brands/new" className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
                   <Plus className="h-3 w-3" />
-                  새 브랜드 추가
+                  {t("influencer.addNewBrand")}
                 </Link>
               )}
 

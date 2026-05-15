@@ -11,6 +11,7 @@ import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { ScoreDistributionChart } from "@/components/dashboard/score-distribution-chart";
 import { EngagementBenchmarkChart } from "@/components/dashboard/engagement-benchmark-chart";
 import { InfluencerTierBadge } from "@/components/analysis/influencer-tier-badge";
+import { SkeletonList } from "@/components/ui/skeleton-card";
 import {
   LayoutDashboard,
   Search,
@@ -28,6 +29,17 @@ import Link from "next/link";
 import { getScoreColor } from "@/lib/score-utils";
 import { useI18n } from "@/lib/i18n/context";
 import { generateAnalysesCsv, downloadCsv } from "@/lib/export/csv-generator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Tab = "history" | "saved";
 type SortBy = "recent" | "score";
@@ -214,7 +226,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-4xl lg:px-8">
+    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 lg:max-w-4xl lg:px-8">
       <div className="mb-6 space-y-3">
         <div className="flex items-center justify-between">
           <div>
@@ -267,11 +279,9 @@ export default function DashboardPage() {
 
       {/* Loading */}
       {loading && (
-        <Card className="border-border/50 bg-card/50">
-          <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+          <SkeletonList count={4} variant="list" />
+        </div>
       )}
 
       {!loading && history.length === 0 && saved.length === 0 && (
@@ -351,7 +361,7 @@ export default function DashboardPage() {
           )}
 
           {/* Charts */}
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             {stats?.scoreDistribution && (
               <ScoreDistributionChart data={stats.scoreDistribution} />
             )}
@@ -393,15 +403,28 @@ export default function DashboardPage() {
 
             {/* Clear all (history tab only) */}
             {tab === "history" && history.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-1 text-xs text-muted-foreground hover:text-destructive"
-                onClick={handleClearAllHistory}
-              >
-                <Trash2 className="h-3 w-3" />
-                {t("dashboard.clearAll")}
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger render={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    {t("dashboard.clearAll")}
+                  </Button>
+                } />
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("dashboard.clearAllConfirmTitle")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("dashboard.clearAllConfirmDesc")}</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("dashboard.clearAllCancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearAllHistory}>{t("dashboard.clearAllConfirm")}</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
 
@@ -412,7 +435,7 @@ export default function DashboardPage() {
 
           {/* History Tab */}
           {tab === "history" && (
-            <div className="space-y-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
+            <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
               {sortedHistory.length > 0 ? (
                 sortedHistory.map((item, i) => (
                   <motion.div
@@ -454,7 +477,7 @@ export default function DashboardPage() {
                           <button
                             onClick={(e) => handleDeleteAnalysis(item.id, e)}
                             disabled={deletingIds.has(item.id)}
-                            className="shrink-0 rounded-full p-1.5 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                            className="shrink-0 rounded-full p-1.5 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
                             aria-label={t("common.delete")}
                           >
                             {deletingIds.has(item.id) ? (
@@ -496,7 +519,7 @@ export default function DashboardPage() {
 
           {/* Saved Tab */}
           {tab === "saved" && (
-            <div className="space-y-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
+            <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
               {sortedSaved.length > 0 ? (
                 sortedSaved.map((item, i) => (
                   <motion.div
@@ -548,7 +571,7 @@ export default function DashboardPage() {
                           <button
                             onClick={(e) => handleUnsave(item.influencerId, e)}
                             disabled={unsavingIds.has(item.influencerId)}
-                            className="shrink-0 rounded-full p-1.5 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                            className="shrink-0 rounded-full p-1.5 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
                             aria-label={t("dashboard.unsaveLabel")}
                           >
                             {unsavingIds.has(item.influencerId) ? (

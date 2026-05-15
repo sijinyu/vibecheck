@@ -6,6 +6,8 @@ import Image from "next/image";
 import { TrendingUp, TrendingDown, Minus, Clock, ImageOff, MessageSquare } from "lucide-react";
 import { getScoreColor } from "@/lib/score-utils";
 import { InfluencerTierBadge } from "./influencer-tier-badge";
+import { useI18n } from "@/lib/i18n/context";
+import type { TranslationKey } from "@/lib/i18n/translations";
 
 interface InfluencerGridCardProps {
   handle: string;
@@ -33,13 +35,13 @@ function formatFollowerCount(n: number): string {
   return String(n);
 }
 
-function getTimeAgo(dateStr: string): string {
+function getTimeAgo(dateStr: string, t: (key: TranslationKey) => string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  if (days === 0) return "오늘";
-  if (days < 7) return `${days}일 전`;
-  if (days < 30) return `${Math.floor(days / 7)}주 전`;
-  return `${Math.floor(days / 30)}개월 전`;
+  if (days === 0) return t("gridCard.today");
+  if (days < 7) return t("gridCard.daysAgo").replace("{n}", String(days));
+  if (days < 30) return t("gridCard.weeksAgo").replace("{n}", String(Math.floor(days / 7)));
+  return t("gridCard.monthsAgo").replace("{n}", String(Math.floor(days / 30)));
 }
 
 type TrendConfig = {
@@ -50,7 +52,8 @@ type TrendConfig = {
 
 function getTrendConfig(
   direction: string | null | undefined,
-  magnitude: number | null | undefined
+  magnitude: number | null | undefined,
+  t: (key: TranslationKey) => string
 ): TrendConfig {
   const mag =
     magnitude != null && magnitude > 0
@@ -60,20 +63,20 @@ function getTrendConfig(
   if (direction === "rising") {
     return {
       icon: <TrendingUp className="h-3 w-3" />,
-      label: `상승${mag}`,
+      label: `${t("gridCard.trendRising")}${mag}`,
       color: "text-emerald-400",
     };
   }
   if (direction === "declining") {
     return {
       icon: <TrendingDown className="h-3 w-3" />,
-      label: `하락${mag}`,
+      label: `${t("gridCard.trendDeclining")}${mag}`,
       color: "text-rose-400",
     };
   }
   return {
     icon: <Minus className="h-3 w-3" />,
-    label: "안정",
+    label: t("gridCard.trendStable"),
     color: "text-muted-foreground",
   };
 }
@@ -96,6 +99,7 @@ export function InfluencerGridCard({
   discoveryStatus,
   onOutreachClick,
 }: InfluencerGridCardProps) {
+  const { t } = useI18n();
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
   const [profileImgError, setProfileImgError] = useState(false);
 
@@ -114,7 +118,7 @@ export function InfluencerGridCard({
   const visibleImages = representativeImages.slice(0, 3);
   const hasImages = visibleImages.length > 0 && visibleImages.some((_, i) => !failedImages.has(i));
 
-  const trend = getTrendConfig(trendDirection, trendMagnitude);
+  const trend = getTrendConfig(trendDirection, trendMagnitude, t);
 
   return (
     <Link href={`/influencer/${handle}`} className="block group">
@@ -200,7 +204,7 @@ export function InfluencerGridCard({
             </span>
             {discoveryStatus === "stub" && (
               <span className="shrink-0 rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
-                AI 추정
+                {t("gridCard.aiEstimate")}
               </span>
             )}
           </div>
@@ -222,7 +226,7 @@ export function InfluencerGridCard({
               ) : (
                 <>
                   <p className="text-3xl font-bold tabular-nums leading-none text-muted-foreground/30">
-                    {discoveryStatus === "stub" ? "미분석" : "--"}
+                    {discoveryStatus === "stub" ? t("gridCard.unanalyzed") : "--"}
                   </p>
                   <p className="mt-0.5 text-[10px] text-muted-foreground/50">
                     VibeScore
@@ -256,7 +260,7 @@ export function InfluencerGridCard({
             {lastAnalyzedAt && (
               <span className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground/60">
                 <Clock className="h-2.5 w-2.5" />
-                {getTimeAgo(lastAnalyzedAt)} 분석
+                {getTimeAgo(lastAnalyzedAt, t)} {t("gridCard.analyzed")}
               </span>
             )}
           </div>
@@ -293,8 +297,8 @@ export function InfluencerGridCard({
               onOutreachClick(handle, platform);
             }}
             className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-primary/90 text-primary-foreground opacity-0 shadow-lg transition-all group-hover:opacity-100 hover:bg-primary"
-            title="아웃리치"
-            aria-label="아웃리치 메시지 생성"
+            title={t("gridCard.outreachTitle")}
+            aria-label={t("gridCard.outreachAriaLabel")}
           >
             <MessageSquare className="h-3.5 w-3.5" />
           </button>

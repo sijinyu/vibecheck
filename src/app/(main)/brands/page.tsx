@@ -7,6 +7,7 @@ import { PageTransition } from "@/components/layout/page-transition";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Palette, Plus, Loader2, ArrowRight } from "lucide-react";
+import { SkeletonList } from "@/components/ui/skeleton-card";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/context";
 
@@ -48,7 +49,7 @@ export default function BrandsPage() {
   }, [fetchBrands]);
 
   return (
-    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-4xl lg:px-8">
+    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 lg:max-w-4xl lg:px-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight">{t("brands.title")}</h1>
@@ -65,11 +66,9 @@ export default function BrandsPage() {
       </div>
 
       {loading && (
-        <Card className="border-border/50 bg-card/50">
-          <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <div className="grid gap-3 md:grid-cols-2">
+          <SkeletonList count={2} variant="brand" />
+        </div>
       )}
 
       {!loading && brands.length === 0 && (
@@ -95,7 +94,7 @@ export default function BrandsPage() {
       )}
 
       {!loading && brands.length > 0 && (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           {brands.map((brand, i) => (
             <motion.div
               key={brand.id}

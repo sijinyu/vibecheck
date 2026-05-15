@@ -215,7 +215,7 @@ export default function NewBrandPage() {
   const isLoading = pageState === "loading";
 
   return (
-    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-4xl lg:px-8">
+    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 lg:max-w-4xl lg:px-8">
       {/* Back navigation */}
       <div className="mb-6">
         <Link

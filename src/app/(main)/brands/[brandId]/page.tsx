@@ -25,6 +25,17 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { OutreachModal } from "@/components/analysis/outreach-modal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // ─── Constants ──────────────────────────────────────────────
 
@@ -294,8 +305,6 @@ export default function BrandDetailPage({
   }
 
   async function handleDeleteBrand() {
-    if (!window.confirm(t("brands.detail.deleteConfirm"))) return;
-
     setDeletingBrand(true);
     try {
       const res = await fetch(`/api/brand/${encodeURIComponent(brandId)}`, {
@@ -319,7 +328,7 @@ export default function BrandDetailPage({
 
   if (loadingBrand) {
     return (
-      <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-5xl lg:px-8">
+      <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 lg:max-w-5xl lg:px-8">
         <Card className="border-border/50 bg-card/50">
           <CardContent className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -331,7 +340,7 @@ export default function BrandDetailPage({
 
   if (!brand) {
     return (
-      <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-5xl lg:px-8">
+      <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 lg:max-w-5xl lg:px-8">
         <div className="mb-6">
           <Link
             href="/brands"
@@ -363,7 +372,7 @@ export default function BrandDetailPage({
   ];
 
   return (
-    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-5xl lg:px-8">
+    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 lg:max-w-5xl lg:px-8">
       {/* Back navigation */}
       <div className="mb-6">
         <Link
@@ -903,9 +912,23 @@ export default function BrandDetailPage({
           <Card className="border-destructive/30 bg-card/50">
             <CardContent className="pt-5 pb-5">
               <p className="mb-3 text-xs font-medium text-destructive">{t("brands.settings.dangerZone")}</p>
-              <Button variant="destructive" size="sm" className="w-full gap-2" onClick={handleDeleteBrand} disabled={deletingBrand}>
-                {deletingBrand ? (<><Loader2 className="h-3.5 w-3.5 animate-spin" />{t("brands.settings.deleting")}</>) : (<><Trash2 className="h-3.5 w-3.5" />{t("brands.detail.delete")}</>)}
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger render={
+                  <Button variant="destructive" size="sm" className="w-full gap-2" disabled={deletingBrand}>
+                    {deletingBrand ? (<><Loader2 className="h-3.5 w-3.5 animate-spin" />{t("brands.settings.deleting")}</>) : (<><Trash2 className="h-3.5 w-3.5" />{t("brands.detail.delete")}</>)}
+                  </Button>
+                } />
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("brands.detail.delete")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("brands.detail.deleteConfirm")}</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("dashboard.clearAllCancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteBrand}>{t("brands.detail.delete")}</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardContent>
           </Card>
 

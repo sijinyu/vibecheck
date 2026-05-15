@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Loader2, Megaphone, Target } from "lucide-react";
+import { useI18n } from "@/lib/i18n/context";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -32,6 +33,7 @@ export default function NewCampaignPage({
 }) {
   const { brandId } = use(params);
   const router = useRouter();
+  const { t } = useI18n();
 
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<CampaignFormData>({
@@ -53,7 +55,7 @@ export default function NewCampaignPage({
   async function handleFormSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!form.name.trim()) {
-      toast.error("캠페인 이름을 입력해주세요");
+      toast.error(t("campaign.new.nameRequired"));
       return;
     }
 
@@ -92,11 +94,11 @@ export default function NewCampaignPage({
       const json = await res.json();
 
       if (!res.ok) {
-        toast.error(json.error?.message ?? "캠페인 생성에 실패했습니다");
+        toast.error(json.error?.message ?? t("campaign.new.createError"));
         return;
       }
 
-      toast.success("캠페인이 생성되었습니다");
+      toast.success(t("campaign.new.createSuccess"));
       const campaignId = json.data?.id;
       if (campaignId) {
         router.push(`/brands/${brandId}/campaigns/${campaignId}`);
@@ -104,14 +106,14 @@ export default function NewCampaignPage({
         router.push(`/brands/${brandId}/campaigns`);
       }
     } catch {
-      toast.error("네트워크 오류가 발생했습니다");
+      toast.error(t("campaign.networkError"));
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-3xl lg:px-8">
+    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 lg:max-w-3xl lg:px-8">
       {/* Back navigation */}
       <div className="mb-6">
         <Link
@@ -119,7 +121,7 @@ export default function NewCampaignPage({
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          캠페인 목록
+          {t("campaign.backToList")}
         </Link>
       </div>
 
@@ -130,9 +132,9 @@ export default function NewCampaignPage({
         transition={{ duration: 0.25 }}
         className="mb-8"
       >
-        <h1 className="text-xl font-bold tracking-tight">새 캠페인 만들기</h1>
+        <h1 className="text-xl font-bold tracking-tight">{t("campaign.new.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          캠페인 정보를 입력하고 인플루언서 마케팅을 시작하세요
+          {t("campaign.new.desc")}
         </p>
       </motion.div>
 
@@ -142,7 +144,7 @@ export default function NewCampaignPage({
           <CardContent className="pt-5 pb-5">
             <div className="mb-4 flex items-center gap-2">
               <Megaphone className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold">기본 정보</h2>
+              <h2 className="text-sm font-semibold">{t("campaign.new.basicInfo")}</h2>
             </div>
             <div className="space-y-4">
               {/* Name */}
@@ -151,13 +153,13 @@ export default function NewCampaignPage({
                   htmlFor="campaign-name"
                   className="mb-1.5 block text-xs font-medium text-muted-foreground"
                 >
-                  캠페인 이름 <span className="text-destructive">*</span>
+                  {t("campaign.new.nameLabel")} <span className="text-destructive">*</span>
                 </label>
                 <Input
                   id="campaign-name"
                   value={form.name}
                   onChange={handleFieldChange("name")}
-                  placeholder="예: 2025 여름 신제품 런칭 캠페인"
+                  placeholder={t("campaign.new.namePlaceholder")}
                   disabled={submitting}
                   required
                 />
@@ -169,7 +171,7 @@ export default function NewCampaignPage({
                   htmlFor="campaign-budget"
                   className="mb-1.5 block text-xs font-medium text-muted-foreground"
                 >
-                  예산 (만원, 선택)
+                  {t("campaign.new.budgetLabel")}
                 </label>
                 <div className="relative">
                   <Input
@@ -184,7 +186,7 @@ export default function NewCampaignPage({
                     className="pr-10"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                    만원
+                    {t("campaign.budgetUnit")}
                   </span>
                 </div>
               </div>
@@ -196,7 +198,7 @@ export default function NewCampaignPage({
                     htmlFor="campaign-start"
                     className="mb-1.5 block text-xs font-medium text-muted-foreground"
                   >
-                    시작일
+                    {t("campaign.new.startDate")}
                   </label>
                   <Input
                     id="campaign-start"
@@ -211,7 +213,7 @@ export default function NewCampaignPage({
                     htmlFor="campaign-end"
                     className="mb-1.5 block text-xs font-medium text-muted-foreground"
                   >
-                    종료일
+                    {t("campaign.new.endDate")}
                   </label>
                   <Input
                     id="campaign-end"
@@ -234,13 +236,13 @@ export default function NewCampaignPage({
                 htmlFor="campaign-brief"
                 className="mb-1.5 block text-xs font-medium text-muted-foreground"
               >
-                캠페인 브리프 (선택)
+                {t("campaign.new.briefLabel")}
               </label>
               <textarea
                 id="campaign-brief"
                 value={form.brief}
                 onChange={handleFieldChange("brief")}
-                placeholder="캠페인 목표, 타겟 오디언스, 메시지, 콘텐츠 방향 등을 자유롭게 작성해주세요"
+                placeholder={t("campaign.new.briefPlaceholder")}
                 disabled={submitting}
                 rows={5}
                 className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 disabled:opacity-50"
@@ -254,7 +256,7 @@ export default function NewCampaignPage({
           <CardContent className="pt-5 pb-5">
             <div className="mb-4 flex items-center gap-2">
               <Target className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold">목표 KPI (선택)</h2>
+              <h2 className="text-sm font-semibold">{t("campaign.new.kpiTitle")}</h2>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
@@ -262,7 +264,7 @@ export default function NewCampaignPage({
                   htmlFor="target-reach"
                   className="mb-1.5 block text-xs font-medium text-muted-foreground"
                 >
-                  목표 도달 수
+                  {t("campaign.new.targetReach")}
                 </label>
                 <Input
                   id="target-reach"
@@ -271,7 +273,7 @@ export default function NewCampaignPage({
                   min={0}
                   value={form.targetReach}
                   onChange={handleFieldChange("targetReach")}
-                  placeholder="예: 500000"
+                  placeholder="500000"
                   disabled={submitting}
                 />
               </div>
@@ -280,7 +282,7 @@ export default function NewCampaignPage({
                   htmlFor="target-engagement"
                   className="mb-1.5 block text-xs font-medium text-muted-foreground"
                 >
-                  목표 인게이지먼트 수
+                  {t("campaign.new.targetEngagement")}
                 </label>
                 <Input
                   id="target-engagement"
@@ -289,7 +291,7 @@ export default function NewCampaignPage({
                   min={0}
                   value={form.targetEngagement}
                   onChange={handleFieldChange("targetEngagement")}
-                  placeholder="예: 25000"
+                  placeholder="25000"
                   disabled={submitting}
                 />
               </div>
@@ -306,12 +308,12 @@ export default function NewCampaignPage({
           {submitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              생성 중...
+              {t("campaign.new.submitting")}
             </>
           ) : (
             <>
               <Megaphone className="h-4 w-4" />
-              캠페인 만들기
+              {t("campaign.new.submit")}
             </>
           )}
         </Button>

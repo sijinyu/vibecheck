@@ -28,7 +28,8 @@ export async function GET() {
   const { data, error } = await supabase
     .from("influencers")
     .select("content_categories")
-    .gte("follower_count", 300);
+    .gte("follower_count", 300)
+    .not("discovery_status", "eq", "stub");
 
   if (error) {
     console.error("[category-counts] query error:", error.message);

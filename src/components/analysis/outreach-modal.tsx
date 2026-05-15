@@ -9,6 +9,7 @@ import {
   Building2,
   ChevronRight,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -125,18 +126,28 @@ export function OutreachModal({
     setTimeout(() => setCopiedField(null), 2000);
   }
 
-  if (!open) return null;
-
   return (
+    <AnimatePresence>
+      {open && (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
+      <motion.div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
       />
 
       {/* Modal content */}
-      <div className="relative z-10 mx-4 w-full max-w-lg rounded-2xl border border-border/50 bg-card p-6 shadow-2xl">
+      <motion.div
+        className="relative z-10 mx-4 w-full max-w-lg rounded-2xl border border-border/50 bg-card p-6 shadow-2xl"
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+      >
         {/* Header */}
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -297,7 +308,9 @@ export function OutreachModal({
             </button>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
+      )}
+    </AnimatePresence>
   );
 }

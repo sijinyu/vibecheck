@@ -1,7 +1,13 @@
+"use client";
+
 import { PageTransition } from "@/components/layout/page-transition";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { signInWithGoogle, signInWithApple } from "./actions";
+import { useI18n } from "@/lib/i18n/context";
+import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { useEffect, Suspense } from "react";
 
 function GoogleIcon() {
   return (
@@ -34,7 +40,17 @@ function AppleIcon() {
   );
 }
 
-export default function LoginPage() {
+function LoginPageContent() {
+  const { t, locale } = useI18n();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error) {
+      toast.error(t("login.error"));
+    }
+  }, [searchParams, t]);
+
   return (
     <PageTransition className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="mb-10 text-center">
@@ -42,7 +58,7 @@ export default function LoginPage() {
           Vibe<span className="text-primary">Check</span>
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          숫자가 아닌 결을 본다
+          {t("login.tagline")}
         </p>
       </div>
 
@@ -55,7 +71,7 @@ export default function LoginPage() {
               className="w-full gap-3 border-border/50 bg-background/50"
             >
               <GoogleIcon />
-              Google로 시작하기
+              {t("login.googleCta")}
             </Button>
           </form>
 
@@ -66,18 +82,46 @@ export default function LoginPage() {
               className="w-full gap-3 border-border/50 bg-background/50"
             >
               <AppleIcon />
-              Apple로 시작하기
+              {t("login.appleCta")}
             </Button>
           </form>
         </CardContent>
       </Card>
 
       <p className="mt-6 text-center text-xs text-muted-foreground/60">
-        로그인하면{" "}
-        <span className="underline underline-offset-2">이용약관</span>과{" "}
-        <span className="underline underline-offset-2">개인정보처리방침</span>
-        에 동의하게 됩니다
+        {locale === "en" ? (
+          <>
+            By signing in, you agree to our{" "}
+            <span className="text-muted-foreground/80">
+              {t("login.termsService")}
+            </span>{" "}
+            and{" "}
+            <span className="text-muted-foreground/80">
+              {t("login.termsPrivacy")}
+            </span>
+          </>
+        ) : (
+          <>
+            로그인하면{" "}
+            <span className="text-muted-foreground/80">
+              {t("login.termsService")}
+            </span>
+            과{" "}
+            <span className="text-muted-foreground/80">
+              {t("login.termsPrivacy")}
+            </span>
+            에 동의하게 됩니다
+          </>
+        )}
       </p>
     </PageTransition>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageContent />
+    </Suspense>
   );
 }

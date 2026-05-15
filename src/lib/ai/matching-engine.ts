@@ -112,11 +112,16 @@ export function calculateMatchScores(
           ? 70
           : Math.min(100, (overlap / Math.max(1, brand.targetCategories.length)) * 100);
 
-      // Quality Filter (15%)
+      // Quality Filter (15%) — smooth ramp instead of hard cliff
       const authenticity = Number(inf.authenticity_score ?? defaultAuthenticity);
       const engagement = Number(inf.engagement_score ?? defaultEngagement);
-      const qualityFilter =
-        authenticity >= 60 && engagement >= 40 ? 100 : Math.min(authenticity, engagement);
+      const qualityBase = Math.min(authenticity, engagement);
+      const bonus = 100 - qualityBase;
+      // smoothStep: 0 below 50, 1 above 70, smooth in between
+      const authNorm = Math.max(0, Math.min(1, (authenticity - 50) / 20));
+      const engNorm = Math.max(0, Math.min(1, (engagement - 30) / 20));
+      const smoothFactor = authNorm * engNorm;
+      const qualityFilter = qualityBase + bonus * smoothFactor;
 
       // Raw composite
       const rawScore =

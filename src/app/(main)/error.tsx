@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n/context";
 
 export default function MainError({
   error,
@@ -10,6 +11,8 @@ export default function MainError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { t } = useI18n();
+
   useEffect(() => {
     console.error("[main-error-boundary]", error);
   }, [error]);
@@ -34,15 +37,15 @@ export default function MainError({
 
       <div>
         <h2 className="text-xl font-semibold text-foreground">
-          문제가 발생했습니다
+          {t("error.title")}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          예상치 못한 오류가 발생했습니다. 다시 시도해주세요.
+          {t("error.desc")}
         </p>
       </div>
 
       <Button onClick={reset} variant="outline">
-        다시 시도
+        {t("error.retry")}
       </Button>
     </div>
   );

@@ -165,14 +165,6 @@ async function handleHandleAnalysis(request: Request) {
       summary: analysis.summary,
       representativeImages: analysis.representativeImages,
       deepAnalysis,
-      _debug: {
-        identityDetected: identity ? { identity: identity.identity, industry: identity.industry } : null,
-        identityError,
-        aiSource: analysis.aiSource,
-        hasGoogleKey: !!googleApiKey,
-        feedPostCount: feedResult.data.posts.length,
-        feedBio: feedResult.data.profile.bio?.slice(0, 100) ?? null,
-      },
     },
   });
 }

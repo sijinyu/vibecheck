@@ -129,6 +129,7 @@ async function handleHiddenGems(supabase: any) {
     .from("influencers")
     .select(CURATED_SELECT_FIELDS + ", engagement_score")
     .in("tier", ["nano", "micro"])
+    .not("discovery_status", "eq", "stub")
     .gte("vibe_score", HIDDEN_GEMS_MIN_VIBE_SCORE)
     .not("engagement_rate", "is", null)
     .not("platform", "is", null)
@@ -163,6 +164,7 @@ async function handleRisingStars(supabase: any) {
   const { data, error } = await supabase
     .from("influencers")
     .select(CURATED_SELECT_FIELDS)
+    .not("discovery_status", "eq", "stub")
     .eq("trend_direction", "rising")
     .gt("trend_magnitude", RISING_STARS_MIN_TREND_MAGNITUDE)
     .order("trend_magnitude", { ascending: false, nullsFirst: false });
@@ -183,6 +185,7 @@ async function handleEngagementLeaders(supabase: any) {
   const { data, error } = await supabase
     .from("influencers")
     .select(CURATED_SELECT_FIELDS)
+    .not("discovery_status", "eq", "stub")
     .not("engagement_score", "is", null)
     .order("engagement_score", { ascending: false, nullsFirst: false })
     .limit(ENGAGEMENT_LEADERS_LIMIT);
@@ -204,6 +207,7 @@ async function handleCategoryTop(supabase: any) {
   const { data: allInfluencers, error } = await supabase
     .from("influencers")
     .select(CURATED_SELECT_FIELDS)
+    .not("discovery_status", "eq", "stub")
     .not("category", "is", null)
     .not("vibe_score", "is", null)
     .order("vibe_score", { ascending: false, nullsFirst: false });

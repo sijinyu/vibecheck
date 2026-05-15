@@ -1,7 +1,8 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { getBenchmark, type InfluencerTier, type Platform } from "@/lib/ai/vibe-score-engine";
+import { getBenchmark, getLikesBenchmark, type InfluencerTier, type Platform } from "@/lib/ai/vibe-score-engine";
+import { useI18n } from "@/lib/i18n/context";
 
 interface BenchmarkBarProps {
   label: string;
@@ -18,6 +19,7 @@ export function BenchmarkBar({
   suffix = "",
   className,
 }: BenchmarkBarProps) {
+  const { t } = useI18n();
   const maxVal = Math.max(value, benchmark) * 1.2 || 1;
   const valueWidth = (value / maxVal) * 100;
   const benchmarkPos = (benchmark / maxVal) * 100;
@@ -46,7 +48,7 @@ export function BenchmarkBar({
         />
       </div>
       <p className="mt-0.5 text-[10px] text-muted-foreground/60">
-        티어 평균: {typeof benchmark === "number" && benchmark < 1
+        {t("benchmark.tierAvg")}: {typeof benchmark === "number" && benchmark < 1
           ? `${(benchmark * 100).toFixed(2)}%`
           : `${benchmark}${suffix}`}
       </p>
@@ -75,6 +77,7 @@ export function TierBenchmarkCard({
   platformBenchmark,
   className,
 }: TierBenchmarkCardProps) {
+  const { t } = useI18n();
   const erBenchmark = platformBenchmark ?? getBenchmark(
     platform as Platform,
     tier as InfluencerTier,
@@ -85,21 +88,21 @@ export function TierBenchmarkCard({
     <Card className={`border-border/50 bg-card/50 ${className ?? ""}`}>
       <CardContent className="space-y-4 py-4">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          티어 벤치마크 비교
+          {t("benchmark.title")}
         </p>
         <BenchmarkBar
-          label="인게이지먼트율"
+          label={t("benchmark.engagementRate")}
           value={engagementRate}
           benchmark={erBenchmark}
         />
         <BenchmarkBar
-          label="평균 좋아요"
+          label={t("benchmark.avgLikes")}
           value={avgLikesPerPost}
-          benchmark={Math.round(avgLikesPerPost * 0.8)}
+          benchmark={getLikesBenchmark(platform as Platform, tier as InfluencerTier)}
           suffix=""
         />
         <BenchmarkBar
-          label="댓글/좋아요 비율"
+          label={t("benchmark.commentRatio")}
           value={
             avgLikesPerPost > 0
               ? Math.round((avgCommentsPerPost / avgLikesPerPost) * 1000) / 1000

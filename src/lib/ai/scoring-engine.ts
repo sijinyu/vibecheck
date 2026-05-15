@@ -370,8 +370,10 @@ function selectRepresentativePosts(
   return Array.from({ length: count }, (_, i) => posts[i * step]);
 }
 
-function clampScore(value: number): number {
-  return Math.round(Math.max(0, Math.min(100, value)));
+function clampScore(value: unknown): number {
+  const num = Number(value);
+  if (isNaN(num) || !isFinite(num)) return 50;
+  return Math.round(Math.max(0, Math.min(100, num)));
 }
 
 function padVector(shortVector: number[], targetLength: number): number[] {

@@ -26,6 +26,7 @@ import {
   ChevronDown,
   Pencil,
 } from "lucide-react";
+import { useI18n } from "@/lib/i18n/context";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -47,42 +48,23 @@ interface Campaign {
   campaign_influencers?: CampaignInfluencer[];
 }
 
-// ─── Constants ───────────────────────────────────────────────
-
-const TABS: Array<{ key: Tab; label: string; icon: React.ReactNode }> = [
-  { key: "influencers", label: "인플루언서", icon: <Users className="h-3.5 w-3.5" /> },
-  { key: "brief", label: "브리프", icon: <FileText className="h-3.5 w-3.5" /> },
-  { key: "budget", label: "예산", icon: <DollarSign className="h-3.5 w-3.5" /> },
-  { key: "performance", label: "성과", icon: <BarChart3 className="h-3.5 w-3.5" /> },
-];
-
-const STATUS_OPTIONS: Array<{ value: CampaignStatus; label: string; color: string }> = [
-  { value: "draft", label: "초안", color: "text-muted-foreground" },
-  { value: "active", label: "진행중", color: "text-emerald-400" },
-  { value: "completed", label: "완료", color: "text-primary" },
-  { value: "archived", label: "보관됨", color: "text-muted-foreground/60" },
-];
-
-const STATUS_DOT: Record<CampaignStatus, string> = {
-  draft: "bg-muted-foreground",
-  active: "bg-emerald-400",
-  completed: "bg-primary",
-  archived: "bg-muted-foreground/40",
-};
-
 // ─── Status Dropdown ─────────────────────────────────────────
 
 function StatusDropdown({
   currentStatus,
   onStatusChange,
   disabled,
+  statusOptions,
+  statusDot,
 }: {
   currentStatus: CampaignStatus;
   onStatusChange: (status: CampaignStatus) => void;
   disabled: boolean;
+  statusOptions: Array<{ value: CampaignStatus; label: string; color: string }>;
+  statusDot: Record<CampaignStatus, string>;
 }) {
   const [open, setOpen] = useState(false);
-  const current = STATUS_OPTIONS.find((s) => s.value === currentStatus);
+  const current = statusOptions.find((s) => s.value === currentStatus);
 
   return (
     <div className="relative">
@@ -91,7 +73,7 @@ function StatusDropdown({
         disabled={disabled}
         className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-card/50 px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-card/80 disabled:opacity-50"
       >
-        <span className={`h-2 w-2 rounded-full ${STATUS_DOT[currentStatus]}`} />
+        <span className={`h-2 w-2 rounded-full ${statusDot[currentStatus]}`} />
         <span className={current?.color}>{current?.label}</span>
         <ChevronDown className="h-3 w-3 text-muted-foreground" />
       </button>
@@ -103,7 +85,7 @@ function StatusDropdown({
             onClick={() => setOpen(false)}
           />
           <div className="absolute right-0 top-full z-20 mt-1 min-w-[120px] overflow-hidden rounded-xl border border-border/60 bg-card shadow-lg">
-            {STATUS_OPTIONS.map((opt) => (
+            {statusOptions.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => {
@@ -114,7 +96,7 @@ function StatusDropdown({
                   opt.value === currentStatus ? "bg-muted/30" : ""
                 }`}
               >
-                <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[opt.value]}`} />
+                <span className={`h-1.5 w-1.5 rounded-full ${statusDot[opt.value]}`} />
                 <span className={opt.color}>{opt.label}</span>
               </button>
             ))}
@@ -133,24 +115,41 @@ export default function CampaignDetailPage({
   params: Promise<{ brandId: string; campaignId: string }>;
 }) {
   const { brandId, campaignId } = use(params);
+  const { t, locale } = useI18n();
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("influencers");
 
-  // Influencer kanban
   const [campaignInfluencers, setCampaignInfluencers] = useState<CampaignInfluencer[]>([]);
   const [loadingInfluencers, setLoadingInfluencers] = useState(false);
-
-  // Brief generation
   const [generatingBrief, setGeneratingBrief] = useState(false);
-
-  // Outreach
   const [outreach, setOutreach] = useState<OutreachResult | null>(null);
   const [loadingOutreach, setLoadingOutreach] = useState(false);
-
-  // Status change
   const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  // ─── i18n-derived constants ─────────────────────────────────
+
+  const STATUS_OPTIONS: Array<{ value: CampaignStatus; label: string; color: string }> = [
+    { value: "draft", label: t("campaign.statusDraft"), color: "text-muted-foreground" },
+    { value: "active", label: t("campaign.statusActive"), color: "text-emerald-400" },
+    { value: "completed", label: t("campaign.statusCompleted"), color: "text-primary" },
+    { value: "archived", label: t("campaign.statusArchived"), color: "text-muted-foreground/60" },
+  ];
+
+  const STATUS_DOT: Record<CampaignStatus, string> = {
+    draft: "bg-muted-foreground",
+    active: "bg-emerald-400",
+    completed: "bg-primary",
+    archived: "bg-muted-foreground/40",
+  };
+
+  const TABS: Array<{ key: Tab; label: string; icon: React.ReactNode }> = [
+    { key: "influencers", label: t("campaign.detail.tabInfluencers"), icon: <Users className="h-3.5 w-3.5" /> },
+    { key: "brief", label: t("campaign.detail.tabBrief"), icon: <FileText className="h-3.5 w-3.5" /> },
+    { key: "budget", label: t("campaign.detail.tabBudget"), icon: <DollarSign className="h-3.5 w-3.5" /> },
+    { key: "performance", label: t("campaign.detail.tabPerformance"), icon: <BarChart3 className="h-3.5 w-3.5" /> },
+  ];
 
   // ─── Fetch campaign ───────────────────────────────────────
 
@@ -162,14 +161,14 @@ export default function CampaignDetailPage({
       if (res.ok && json.data) {
         setCampaign(json.data);
       } else {
-        toast.error(json.error?.message ?? "캠페인 정보를 불러올 수 없습니다");
+        toast.error(json.error?.message ?? t("campaign.detail.fetchError"));
       }
     } catch {
-      toast.error("네트워크 오류가 발생했습니다");
+      toast.error(t("campaign.networkError"));
     } finally {
       setLoading(false);
     }
-  }, [campaignId]);
+  }, [campaignId, t]);
 
   useEffect(() => {
     fetchCampaign();
@@ -186,11 +185,11 @@ export default function CampaignDetailPage({
         setCampaignInfluencers(json.data);
       }
     } catch {
-      toast.error("인플루언서 목록을 불러올 수 없습니다");
+      toast.error(t("campaign.detail.influencersFetchError"));
     } finally {
       setLoadingInfluencers(false);
     }
-  }, [campaignId]);
+  }, [campaignId, t]);
 
   useEffect(() => {
     if (tab === "influencers") {
@@ -212,12 +211,12 @@ export default function CampaignDetailPage({
       const json = await res.json();
       if (res.ok && json.data) {
         setCampaign(json.data);
-        toast.success("캠페인 상태가 변경되었습니다");
+        toast.success(t("campaign.detail.statusChanged"));
       } else {
-        toast.error(json.error?.message ?? "상태 변경에 실패했습니다");
+        toast.error(json.error?.message ?? t("campaign.detail.statusChangeFailed"));
       }
     } catch {
-      toast.error("네트워크 오류가 발생했습니다");
+      toast.error(t("campaign.networkError"));
     } finally {
       setUpdatingStatus(false);
     }
@@ -228,7 +227,6 @@ export default function CampaignDetailPage({
     newStatus: CampaignInfluencerStatus
   ) {
     try {
-      // Find the campaign_influencer record to get influencer_id
       const ci = campaignInfluencers.find((c) => c.id === id);
       if (!ci) return;
 
@@ -243,10 +241,10 @@ export default function CampaignDetailPage({
           prev.map((c) => (c.id === id ? { ...c, status: newStatus } : c))
         );
       } else {
-        toast.error("상태 변경에 실패했습니다");
+        toast.error(t("campaign.detail.statusChangeFailed"));
       }
     } catch {
-      toast.error("네트워크 오류가 발생했습니다");
+      toast.error(t("campaign.networkError"));
     }
   }
 
@@ -260,12 +258,12 @@ export default function CampaignDetailPage({
       const json = await res.json();
       if (res.ok && json.data) {
         setCampaign((prev) => (prev ? { ...prev, brief_content: json.data.brief } : prev));
-        toast.success("AI 브리프가 생성되었습니다");
+        toast.success(t("campaign.detail.briefSuccess"));
       } else {
-        toast.error(json.error?.message ?? "브리프 생성에 실패했습니다");
+        toast.error(json.error?.message ?? t("campaign.detail.briefError"));
       }
     } catch {
-      toast.error("네트워크 오류가 발생했습니다");
+      toast.error(t("campaign.networkError"));
     } finally {
       setGeneratingBrief(false);
     }
@@ -281,10 +279,10 @@ export default function CampaignDetailPage({
       if (res.ok && json.data) {
         setOutreach(json.data);
       } else {
-        toast.error(json.error?.message ?? "아웃리치 생성에 실패했습니다");
+        toast.error(json.error?.message ?? t("campaign.detail.outreachError"));
       }
     } catch {
-      toast.error("네트워크 오류가 발생했습니다");
+      toast.error(t("campaign.networkError"));
     } finally {
       setLoadingOutreach(false);
     }
@@ -301,7 +299,7 @@ export default function CampaignDetailPage({
     });
     const json = await res.json();
     if (!res.ok) {
-      throw new Error(json.error?.message ?? "예산 최적화에 실패했습니다");
+      throw new Error(json.error?.message ?? t("campaign.detail.budgetOptError"));
     }
     return json.data as BudgetOptimizationResult;
   }
@@ -338,11 +336,22 @@ export default function CampaignDetailPage({
     spend: Math.round(budgetKrw * 0.91),
   };
 
+  // ─── Helper ─────────────────────────────────────────────
+
+  function fmtDate(dateStr: string | null): string {
+    if (!dateStr) return t("campaign.dateTbd");
+    return new Date(dateStr).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
+
   // ─── Loading / Not found ──────────────────────────────────
 
   if (loading) {
     return (
-      <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-5xl lg:px-8">
+      <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 lg:max-w-5xl lg:px-8">
         <Card className="border-border/50 bg-card/50">
           <CardContent className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -354,19 +363,19 @@ export default function CampaignDetailPage({
 
   if (!campaign) {
     return (
-      <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-5xl lg:px-8">
+      <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 lg:max-w-5xl lg:px-8">
         <div className="mb-6">
           <Link
             href={`/brands/${brandId}/campaigns`}
             className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            캠페인 목록
+            {t("campaign.backToList")}
           </Link>
         </div>
         <Card className="border-border/50 bg-card/50">
           <CardContent className="py-16 text-center text-sm text-muted-foreground">
-            캠페인을 찾을 수 없습니다
+            {t("campaign.detail.notFound")}
           </CardContent>
         </Card>
       </PageTransition>
@@ -376,7 +385,7 @@ export default function CampaignDetailPage({
   // ─── Render ───────────────────────────────────────────────
 
   return (
-    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 pb-24 lg:max-w-5xl lg:px-8">
+    <PageTransition className="mx-auto w-full max-w-lg px-4 pt-12 lg:max-w-5xl lg:px-8">
       {/* Back navigation */}
       <div className="mb-6">
         <Link
@@ -384,7 +393,7 @@ export default function CampaignDetailPage({
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          캠페인 목록
+          {t("campaign.backToList")}
         </Link>
       </div>
 
@@ -402,20 +411,13 @@ export default function CampaignDetailPage({
                 <h1 className="truncate text-lg font-bold tracking-tight">{campaign.name}</h1>
                 {(campaign.start_date || campaign.end_date) && (
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {campaign.start_date
-                      ? new Date(campaign.start_date).toLocaleDateString("ko-KR", { year: "numeric", month: "short", day: "numeric" })
-                      : "미정"}
-                    {campaign.end_date && (
-                      <>
-                        {" ~ "}
-                        {new Date(campaign.end_date).toLocaleDateString("ko-KR", { year: "numeric", month: "short", day: "numeric" })}
-                      </>
-                    )}
+                    {fmtDate(campaign.start_date)}
+                    {campaign.end_date && ` ~ ${fmtDate(campaign.end_date)}`}
                   </p>
                 )}
                 {campaign.budget_krw !== null && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    예산 {Math.round(campaign.budget_krw / 10000).toLocaleString()}만원
+                    {t("campaign.detail.budget")} {Math.round(campaign.budget_krw / 10000).toLocaleString()}{t("campaign.budgetUnit")}
                   </p>
                 )}
               </div>
@@ -425,11 +427,13 @@ export default function CampaignDetailPage({
                   currentStatus={campaign.status}
                   onStatusChange={handleStatusChange}
                   disabled={updatingStatus}
+                  statusOptions={STATUS_OPTIONS}
+                  statusDot={STATUS_DOT}
                 />
                 <Link href={`/brands/${brandId}/campaigns/${campaignId}/edit`}>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                     <Pencil className="h-3.5 w-3.5" />
-                    <span className="sr-only">편집</span>
+                    <span className="sr-only">{t("campaign.detail.edit")}</span>
                   </Button>
                 </Link>
               </div>
@@ -468,16 +472,14 @@ export default function CampaignDetailPage({
             <Card className="border-border/50 bg-card/50">
               <CardContent className="flex items-center justify-center gap-2 py-12">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">불러오는 중...</span>
+                <span className="text-sm text-muted-foreground">{t("campaign.detail.loading")}</span>
               </CardContent>
             </Card>
           ) : (
             <CampaignKanban
               campaignInfluencers={campaignInfluencers}
               onStatusChange={handleInfluencerStatusChange}
-              onCardClick={() => {
-                // Future: open detail drawer
-              }}
+              onCardClick={() => {}}
             />
           )}
         </motion.div>
@@ -492,13 +494,12 @@ export default function CampaignDetailPage({
           transition={{ duration: 0.25 }}
           className="space-y-4"
         >
-          {/* Brief content */}
           <Card className="border-border/50 bg-card/50">
             <CardContent className="pt-5 pb-5">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-semibold">캠페인 브리프</h3>
+                  <h3 className="text-sm font-semibold">{t("campaign.detail.briefTitle")}</h3>
                 </div>
                 <Button
                   variant="outline"
@@ -510,12 +511,12 @@ export default function CampaignDetailPage({
                   {generatingBrief ? (
                     <>
                       <Loader2 className="h-3 w-3 animate-spin" />
-                      생성 중...
+                      {t("campaign.detail.briefGenerating")}
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-3 w-3" />
-                      AI 브리프 생성
+                      {t("campaign.detail.briefGenerate")}
                     </>
                   )}
                 </Button>
@@ -529,17 +530,16 @@ export default function CampaignDetailPage({
                 <div className="flex flex-col items-center gap-3 py-8 text-center">
                   <FileText className="h-7 w-7 text-muted-foreground/40" />
                   <p className="text-sm text-muted-foreground">
-                    아직 브리프가 없습니다
+                    {t("campaign.detail.briefEmpty")}
                   </p>
                   <p className="text-xs text-muted-foreground/70">
-                    AI 브리프 생성 버튼을 눌러 자동으로 브리프를 작성하거나, 직접 입력하세요
+                    {t("campaign.detail.briefEmptyDesc")}
                   </p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Outreach preview */}
           <OutreachPreview
             outreach={outreach}
             isLoading={loadingOutreach}
@@ -577,9 +577,9 @@ export default function CampaignDetailPage({
                 <div className="rounded-xl bg-muted/50 p-4">
                   <BarChart3 className="h-7 w-7 text-muted-foreground" />
                 </div>
-                <p className="text-sm font-medium">목표 KPI를 설정해주세요</p>
+                <p className="text-sm font-medium">{t("campaign.detail.kpiEmpty")}</p>
                 <p className="text-xs text-muted-foreground">
-                  캠페인 생성 시 목표 도달 수와 인게이지먼트를 설정하면 성과를 비교할 수 있습니다
+                  {t("campaign.detail.kpiEmptyDesc")}
                 </p>
               </CardContent>
             </Card>

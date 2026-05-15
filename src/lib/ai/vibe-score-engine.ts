@@ -95,6 +95,22 @@ export function getBenchmark(
   return base * avgMultiplier;
 }
 
+/** Platform × Tier average likes benchmarks */
+const PLATFORM_TIER_LIKES_BENCHMARKS: Record<Platform, Record<InfluencerTier, number>> = {
+  instagram: { nano: 150, micro: 500, mid: 1500, macro: 5000, mega: 25000 },
+  tiktok:    { nano: 500, micro: 2000, mid: 8000, macro: 30000, mega: 100000 },
+};
+
+/** Get platform×tier average likes benchmark */
+export function getLikesBenchmark(
+  platform: Platform,
+  tier: InfluencerTier,
+): number {
+  return PLATFORM_TIER_LIKES_BENCHMARKS[platform]?.[tier]
+    ?? PLATFORM_TIER_LIKES_BENCHMARKS.instagram[tier]
+    ?? 500;
+}
+
 function determineTier(followerCount: number): InfluencerTier {
   if (followerCount >= 1_000_000) return "mega";
   if (followerCount >= 100_000) return "macro";
@@ -224,9 +240,9 @@ function calculateEngagementScore(
 
   // Tier-adjusted floors
   if (tier === "mega" && engagementRate > 0.003) {
-    score = Math.max(score, 55);
+    score = Math.max(score, 40);
   } else if (tier === "macro" && engagementRate > 0.01) {
-    score = Math.max(score, 50);
+    score = Math.max(score, 45);
   }
 
   return {
