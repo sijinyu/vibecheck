@@ -20,7 +20,6 @@ const translations = {
   "landing.ctaFree": { ko: "무료로 시작하기", en: "Start for Free" },
   "landing.ctaDemo": { ko: "무료 가입 후 바로 시작할 수 있어요", en: "Sign up free and start right away" },
   "landing.demoLabel": { ko: "데모 분석 결과", en: "Demo Analysis Result" },
-  "landing.moodboardLabel": { ko: "대표 무드보드", en: "Representative Moodboard" },
   "landing.featuresLabel": { ko: "주요 기능", en: "Key Features" },
   "landing.feature.vibeScore.title": { ko: "VibeScore", en: "VibeScore" },
   "landing.feature.vibeScore.desc": {
@@ -32,12 +31,6 @@ const translations = {
     ko: "브랜드 톤 벡터와 인플루언서 스타일의 적합도를 AI가 수치로 평가합니다",
     en: "AI evaluates brand-influencer fit by comparing tone vectors and style alignment",
   },
-  "landing.feature.vibeSearch.title": { ko: "Vibe Search", en: "Vibe Search" },
-  "landing.feature.vibeSearch.desc": {
-    ko: "무드 이미지를 업로드하면 유사한 미적 감도의 인플루언서를 탐색",
-    en: "Upload mood images to find influencers with similar aesthetic vibes",
-  },
-
   // Analyze
   "analyze.title": { ko: "숫자가 아닌 결을 본다", en: "See vibes, not just numbers" },
   "analyze.placeholder.instagram": {
@@ -499,10 +492,10 @@ const translations = {
   "share.ogDesc": { ko: "분석 결과를 확인해보세요", en: "View the analysis results" },
 
   // Score dimension labels
-  "score.aesthetic": { ko: "미적", en: "Aesthetic" },
-  "score.engagement": { ko: "참여도", en: "Engagement" },
+  "score.aesthetic": { ko: "미적 퀄리티", en: "Aesthetic" },
+  "score.engagement": { ko: "인게이지먼트", en: "Engagement" },
   "score.consistency": { ko: "일관성", en: "Consistency" },
-  "score.growth": { ko: "성장성", en: "Growth" },
+  "score.growth": { ko: "성장 잠재력", en: "Growth" },
   "score.authenticity": { ko: "진정성", en: "Authenticity" },
   "score.color": { ko: "색감", en: "Color" },
   "score.composition": { ko: "구도", en: "Composition" },
@@ -610,6 +603,71 @@ const translations = {
   "usage.upgradeCta": { ko: "Pro 알아보기", en: "Learn about Pro" },
   "usage.close": { ko: "닫기", en: "Close" },
   "usage.freeOutreach": { ko: "이번 달 DM {used}/{limit}회 사용", en: "{used}/{limit} outreach used this month" },
+
+  // Platform names
+  "platform.instagram": { ko: "Instagram", en: "Instagram" },
+  "platform.tiktok": { ko: "TikTok", en: "TikTok" },
+
+  // VibeScore breakdown tooltips
+  "score.aesthetic.tip": { ko: "피드의 시각적 완성도 — 색감, 구도, 톤 일관성 (25%)", en: "Visual quality of feed — color, composition, tone consistency (25%)" },
+  "score.engagement.tip": { ko: "참여율·절대 성과·참여 품질 3차원 분석 (30%)", en: "3-dimensional: engagement rate, absolute performance, quality (30%)" },
+  "score.consistency.tip": { ko: "포스팅 빈도 규칙성 + 콘텐츠 톤 안정성 (15%)", en: "Posting regularity + content tone stability (15%)" },
+  "score.growth.tip": { ko: "팔로워/팔로잉 비율, 인게이지먼트 추세 (15%)", en: "Follower/following ratio, engagement trend (15%)" },
+  "score.authenticity.tip": { ko: "가짜 팔로워/봇 인게이지먼트 탐지 (15%)", en: "Fake follower/bot engagement detection (15%)" },
+
+  // Engagement metrics labels
+  "metrics.engagementRate": { ko: "참여율", en: "Engagement Rate" },
+  "metrics.avgLikes": { ko: "평균 좋아요", en: "Avg. Likes" },
+  "metrics.avgComments": { ko: "평균 댓글", en: "Avg. Comments" },
+  "metrics.postingFrequency": { ko: "포스팅 주기", en: "Posting Freq." },
+  "metrics.avgShares": { ko: "평균 공유", en: "Avg. Shares" },
+  "metrics.avgPlays": { ko: "평균 조회수", en: "Avg. Views" },
+  "metrics.estimatedCPE": { ko: "예상 CPE", en: "Est. CPE" },
+  "metrics.days": { ko: "일", en: "days" },
+  "metrics.won": { ko: "원", en: "₩" },
+
+  // Dashboard KPI & chart labels
+  "dashboard.kpi.totalAnalyses": { ko: "총 분석", en: "Total Analyses" },
+  "dashboard.kpi.avgVibeScore": { ko: "평균 VibeScore", en: "Avg VibeScore" },
+  "dashboard.kpi.topTier": { ko: "주요 티어", en: "Top Tier" },
+  "dashboard.kpi.saved": { ko: "저장됨", en: "Saved" },
+  "dashboard.chart.scoreDistribution": { ko: "VibeScore 분포", en: "VibeScore Distribution" },
+  "dashboard.chart.analysisCount": { ko: "분석 수", en: "Analyses" },
+  "dashboard.chart.influencerBenchmark": { ko: "인플루언서 벤치마크", en: "Influencer Benchmark" },
+
+  // Compare page additional labels
+  "compare.aestheticComparison": { ko: "미적 비교", en: "Aesthetic Comparison" },
+  "compare.rankings": { ko: "순위", en: "Rankings" },
+  "compare.handlePlaceholder": { ko: "인플루언서 {n} 핸들", en: "Influencer {n} handle" },
+
+  // Profile detail labels
+  "profile.scoreBreakdown": { ko: "점수 분석", en: "Score Breakdown" },
+
+  // Category i18n
+  "category.Fashion": { ko: "패션", en: "Fashion" },
+  "category.Beauty": { ko: "뷰티", en: "Beauty" },
+  "category.Food": { ko: "푸드", en: "Food" },
+  "category.Travel": { ko: "여행", en: "Travel" },
+  "category.Fitness": { ko: "피트니스", en: "Fitness" },
+  "category.Lifestyle": { ko: "라이프스타일", en: "Lifestyle" },
+  "category.Tech": { ko: "테크", en: "Tech" },
+  "category.Art": { ko: "아트", en: "Art" },
+  "category.Music": { ko: "음악", en: "Music" },
+  "category.Parenting": { ko: "육아", en: "Parenting" },
+  "category.Pets": { ko: "반려동물", en: "Pets" },
+  "category.Home": { ko: "홈", en: "Home" },
+  "category.Education": { ko: "교육", en: "Education" },
+  "category.Entertainment": { ko: "엔터", en: "Entertainment" },
+  "category.Wellness": { ko: "웰니스", en: "Wellness" },
+  "category.Health": { ko: "건강", en: "Health" },
+  "category.Finance": { ko: "금융", en: "Finance" },
+  "category.Gaming": { ko: "게임", en: "Gaming" },
+  "category.Sports": { ko: "스포츠", en: "Sports" },
+  "category.Photography": { ko: "사진", en: "Photography" },
+
+  // Auth
+  "auth.signOut": { ko: "로그아웃", en: "Sign Out" },
+  "login.termsAgree": { ko: "로그인하면 {terms}과 {privacy}에 동의하게 됩니다", en: "By signing in, you agree to our {terms} and {privacy}" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

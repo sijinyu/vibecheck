@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, MessageCircle, Calendar, TrendingUp, Share2, Play, DollarSign } from "lucide-react";
+import { useI18n } from "@/lib/i18n/context";
 
 interface EngagementMetricsCardProps {
   engagementRate: number;
@@ -34,26 +35,28 @@ export function EngagementMetricsCard({
   platform,
   className,
 }: EngagementMetricsCardProps) {
+  const { t } = useI18n();
+
   const metrics = [
     {
       icon: TrendingUp,
-      label: "참여율",
+      label: t("metrics.engagementRate"),
       value: `${(engagementRate * 100).toFixed(2)}%`,
     },
     {
       icon: Heart,
-      label: "평균 좋아요",
+      label: t("metrics.avgLikes"),
       value: formatNumber(avgLikesPerPost),
     },
     {
       icon: MessageCircle,
-      label: "평균 댓글",
+      label: t("metrics.avgComments"),
       value: formatNumber(avgCommentsPerPost),
     },
     {
       icon: Calendar,
-      label: "포스팅 주기",
-      value: postingFrequencyDays > 0 ? `${postingFrequencyDays}일` : "-",
+      label: t("metrics.postingFrequency"),
+      value: postingFrequencyDays > 0 ? `${postingFrequencyDays}${t("metrics.days")}` : "-",
     },
   ];
 
@@ -61,7 +64,7 @@ export function EngagementMetricsCard({
   if (platform === "tiktok" || avgSharesPerPost > 0) {
     metrics.push({
       icon: Share2,
-      label: "평균 공유",
+      label: t("metrics.avgShares"),
       value: formatNumber(avgSharesPerPost),
     });
   }
@@ -69,7 +72,7 @@ export function EngagementMetricsCard({
   if (platform === "tiktok" || avgPlaysPerPost > 0) {
     metrics.push({
       icon: Play,
-      label: "평균 조회수",
+      label: t("metrics.avgPlays"),
       value: avgPlaysPerPost > 0 ? formatNumber(avgPlaysPerPost) : "-",
     });
   }
@@ -78,8 +81,8 @@ export function EngagementMetricsCard({
   if (estimatedCPE != null && estimatedCPE > 0) {
     metrics.push({
       icon: DollarSign,
-      label: "예상 CPE",
-      value: `${formatNumber(estimatedCPE)}원`,
+      label: t("metrics.estimatedCPE"),
+      value: `${formatNumber(estimatedCPE)}${t("metrics.won")}`,
     });
   }
 

@@ -140,7 +140,7 @@ export default function ComparePage() {
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {p === "instagram" ? "Instagram" : "TikTok"}
+                  {p === "instagram" ? t("platform.instagram") : t("platform.tiktok")}
                 </button>
               ))}
             </div>
@@ -151,9 +151,7 @@ export default function ComparePage() {
                   value={handle}
                   onChange={handleInputChange(i)}
                   placeholder={
-                    locale === "ko"
-                      ? `인플루언서 ${i + 1} 핸들`
-                      : `Influencer ${i + 1} handle`
+                    t("compare.handlePlaceholder").replace("{n}", String(i + 1))
                   }
                   disabled={isLoading}
                   className="flex-1"
@@ -266,7 +264,7 @@ export default function ComparePage() {
             <Card className="border-border/50 bg-card/50">
               <CardContent className="p-5">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Aesthetic Comparison
+                  {t("compare.aestheticComparison")}
                 </p>
                 <CompareRadarChart
                   influencers={state.analyses.map((a) => ({
@@ -303,7 +301,7 @@ export default function ComparePage() {
             {state.comparison.rankings.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Rankings
+                  {t("compare.rankings")}
                 </p>
                 {state.comparison.rankings.map((ranking, i) => (
                   <motion.div

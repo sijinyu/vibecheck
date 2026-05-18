@@ -10,6 +10,7 @@ import {
   Tooltip as RechartsTooltip,
   Legend,
 } from "recharts";
+import { useI18n } from "@/lib/i18n/context";
 
 interface EngagementBenchmarkChartProps {
   analyses: Array<{
@@ -24,6 +25,7 @@ export function EngagementBenchmarkChart({
   analyses,
   className,
 }: EngagementBenchmarkChartProps) {
+  const { t } = useI18n();
   const recent = analyses.slice(0, 8).map((a) => ({
     handle: `@${a.handle.length > 8 ? a.handle.slice(0, 8) + "…" : a.handle}`,
     vibeScore: Number(a.vibeScore ?? 0),
@@ -36,7 +38,7 @@ export function EngagementBenchmarkChart({
     <Card className={`border-border/50 bg-card/50 ${className ?? ""}`}>
       <CardContent className="py-4">
         <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          인플루언서 벤치마크
+          {t("dashboard.chart.influencerBenchmark")}
         </p>
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
@@ -76,7 +78,7 @@ export function EngagementBenchmarkChart({
                 dataKey="engagementScore"
                 fill="hsl(var(--accent))"
                 radius={[3, 3, 0, 0]}
-                name="Engagement"
+                name={t("score.engagement")}
               />
             </BarChart>
           </ResponsiveContainer>

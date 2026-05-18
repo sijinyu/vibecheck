@@ -6,6 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useI18n } from "@/lib/i18n/context";
 
 interface SubScore {
   label: string;
@@ -31,36 +32,38 @@ export function VibeScoreBreakdown({
   authenticityScore,
   className,
 }: VibeScoreBreakdownProps) {
+  const { t } = useI18n();
+
   const scores: SubScore[] = [
     {
-      label: "미적 퀄리티",
+      label: t("score.aesthetic"),
       value: aestheticScore,
       color: "bg-violet-500",
-      tip: "피드의 시각적 완성도 — 색감, 구도, 톤 일관성 (25%)",
+      tip: t("score.aesthetic.tip"),
     },
     {
-      label: "인게이지먼트",
+      label: t("score.engagement"),
       value: engagementScore,
       color: "bg-blue-500",
-      tip: "참여율·절대 성과·참여 품질 3차원 분석 (30%)",
+      tip: t("score.engagement.tip"),
     },
     {
-      label: "일관성",
+      label: t("score.consistency"),
       value: consistencyScore,
       color: "bg-emerald-500",
-      tip: "포스팅 빈도 규칙성 + 콘텐츠 톤 안정성 (15%)",
+      tip: t("score.consistency.tip"),
     },
     {
-      label: "성장 잠재력",
+      label: t("score.growth"),
       value: growthPotentialScore,
       color: "bg-amber-500",
-      tip: "팔로워/팔로잉 비율, 인게이지먼트 추세 (15%)",
+      tip: t("score.growth.tip"),
     },
     {
-      label: "진정성",
+      label: t("score.authenticity"),
       value: authenticityScore,
       color: "bg-rose-500",
-      tip: "가짜 팔로워/봇 인게이지먼트 탐지 (15%)",
+      tip: t("score.authenticity.tip"),
     },
   ];
 

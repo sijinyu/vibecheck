@@ -9,6 +9,7 @@ import {
   YAxis,
   Tooltip as RechartsTooltip,
 } from "recharts";
+import { useI18n } from "@/lib/i18n/context";
 
 interface ScoreDistributionChartProps {
   data: Array<{ range: string; count: number }>;
@@ -19,6 +20,7 @@ export function ScoreDistributionChart({
   data,
   className,
 }: ScoreDistributionChartProps) {
+  const { t } = useI18n();
   const hasData = data.some((d) => d.count > 0);
 
   if (!hasData) return null;
@@ -27,7 +29,7 @@ export function ScoreDistributionChart({
     <Card className={`border-border/50 bg-card/50 ${className ?? ""}`}>
       <CardContent className="py-4">
         <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          VibeScore 분포
+          {t("dashboard.chart.scoreDistribution")}
         </p>
         <div className="h-40">
           <ResponsiveContainer width="100%" height="100%">
@@ -54,7 +56,7 @@ export function ScoreDistributionChart({
                 dataKey="count"
                 fill="hsl(var(--primary))"
                 radius={[4, 4, 0, 0]}
-                name="분석 수"
+                name={t("dashboard.chart.analysisCount")}
               />
             </BarChart>
           </ResponsiveContainer>

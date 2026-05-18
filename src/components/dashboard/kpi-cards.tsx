@@ -7,6 +7,7 @@ import {
   Users,
   Bookmark,
 } from "lucide-react";
+import { useI18n } from "@/lib/i18n/context";
 
 interface KpiCardsProps {
   totalAnalyses: number;
@@ -23,31 +24,32 @@ export function KpiCards({
   totalSaved,
   className,
 }: KpiCardsProps) {
+  const { t } = useI18n();
   const topTier =
     Object.entries(tierDistribution).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "-";
 
   const kpis = [
     {
       icon: BarChart3,
-      label: "총 분석",
+      label: t("dashboard.kpi.totalAnalyses"),
       value: totalAnalyses.toString(),
       color: "text-blue-400",
     },
     {
       icon: TrendingUp,
-      label: "평균 VibeScore",
+      label: t("dashboard.kpi.avgVibeScore"),
       value: avgVibeScore > 0 ? avgVibeScore.toString() : "-",
       color: "text-emerald-400",
     },
     {
       icon: Users,
-      label: "주요 티어",
+      label: t("dashboard.kpi.topTier"),
       value: topTier.charAt(0).toUpperCase() + topTier.slice(1),
       color: "text-violet-400",
     },
     {
       icon: Bookmark,
-      label: "저장됨",
+      label: t("dashboard.kpi.saved"),
       value: totalSaved.toString(),
       color: "text-amber-400",
     },

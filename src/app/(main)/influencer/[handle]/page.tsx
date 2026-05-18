@@ -309,7 +309,7 @@ export default function InfluencerProfilePage({
               </h1>
               <div className="flex items-center gap-2">
                 <p className="text-sm text-muted-foreground">
-                  @{data.handle} · {data.platform === "instagram" ? "Instagram" : "TikTok"}
+                  @{data.handle} · {data.platform === "instagram" ? t("platform.instagram") : t("platform.tiktok")}
                 </p>
                 {data.tier && <InfluencerTierBadge tier={data.tier} />}
               </div>
@@ -483,7 +483,7 @@ export default function InfluencerProfilePage({
               <Card className="border-border/50 bg-card/50">
                 <CardContent className="py-5">
                   <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Score Breakdown
+                    {t("profile.scoreBreakdown")}
                   </p>
                   <VibeScoreBreakdown
                     aestheticScore={Number(data.aesthetic_score ?? 0)}

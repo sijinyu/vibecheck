@@ -22,7 +22,7 @@ const demoData = {
   displayName: "Studio Muse",
   aestheticScore: 85,
   vibeScore: 87,
-  tier: "micro",
+  tier: "mid",
   engagementRate: 0.042,
   scores: {
     color: 92,

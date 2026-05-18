@@ -51,7 +51,7 @@ export function UpgradeModal({ open, onClose }: UpgradeModalProps) {
         <div className="grid grid-cols-2 gap-4 py-4">
           {/* Free column */}
           <div className="rounded-lg border border-border/50 p-4">
-            <h3 className="mb-3 text-sm font-semibold">Free</h3>
+            <h3 className="mb-3 text-sm font-semibold">{t("usage.free")}</h3>
             <ul className="space-y-2">
               {FREE_FEATURES.map((f) => (
                 <li
@@ -72,7 +72,7 @@ export function UpgradeModal({ open, onClose }: UpgradeModalProps) {
           {/* Pro column */}
           <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4">
             <div className="mb-3 flex items-baseline gap-2">
-              <h3 className="text-sm font-semibold text-primary">Pro</h3>
+              <h3 className="text-sm font-semibold text-primary">{t("usage.pro")}</h3>
               <span className="text-xs text-muted-foreground">
                 {t("usage.proPrice")}
               </span>

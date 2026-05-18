@@ -41,7 +41,7 @@ function AppleIcon() {
 }
 
 function LoginPageContent() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -89,30 +89,27 @@ function LoginPageContent() {
       </Card>
 
       <p className="mt-6 text-center text-xs text-muted-foreground/60">
-        {locale === "en" ? (
-          <>
-            By signing in, you agree to our{" "}
-            <span className="text-muted-foreground/80">
-              {t("login.termsService")}
-            </span>{" "}
-            and{" "}
-            <span className="text-muted-foreground/80">
-              {t("login.termsPrivacy")}
-            </span>
-          </>
-        ) : (
-          <>
-            로그인하면{" "}
-            <span className="text-muted-foreground/80">
-              {t("login.termsService")}
-            </span>
-            과{" "}
-            <span className="text-muted-foreground/80">
-              {t("login.termsPrivacy")}
-            </span>
-            에 동의하게 됩니다
-          </>
-        )}
+        {t("login.termsAgree")
+          .split("{terms}")
+          .map((part, i) =>
+            i === 0 ? (
+              <span key="pre">{part}</span>
+            ) : (
+              <span key="post">
+                <span className="text-muted-foreground/80">{t("login.termsService")}</span>
+                {part.split("{privacy}").map((sub, j) =>
+                  j === 0 ? (
+                    <span key="mid">{sub}</span>
+                  ) : (
+                    <span key="end">
+                      <span className="text-muted-foreground/80">{t("login.termsPrivacy")}</span>
+                      {sub}
+                    </span>
+                  )
+                )}
+              </span>
+            )
+          )}
       </p>
     </PageTransition>
   );

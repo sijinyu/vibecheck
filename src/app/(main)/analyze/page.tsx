@@ -433,7 +433,7 @@ export default function AnalyzePage() {
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {p === "instagram" ? "Instagram" : "TikTok"}
+                  {p === "instagram" ? t("platform.instagram") : t("platform.tiktok")}
                 </button>
               ))}
             </div>
@@ -656,7 +656,7 @@ export default function AnalyzePage() {
                     }`}
                   >
                     <span className="text-xl">{emoji}</span>
-                    <span className="text-[11px] font-medium leading-tight">{name}</span>
+                    <span className="text-[11px] font-medium leading-tight">{t(`category.${name}` as import("@/lib/i18n/translations").TranslationKey)}</span>
                     {count > 0 && (
                       <span className="text-[9px] tabular-nums opacity-60">{count.toLocaleString()}{t("discover.countSuffix")}</span>
                     )}
@@ -686,7 +686,7 @@ export default function AnalyzePage() {
                           {item.vibeScore ?? item.aestheticScore}
                         </p>
                         <p className="text-[10px] text-muted-foreground">
-                          {item.vibeScore ? "VibeScore" : "Aesthetic"}
+                          {item.vibeScore ? "VibeScore" : t("score.aesthetic")}
                         </p>
                       </CardContent>
                     </Card>
@@ -1070,12 +1070,12 @@ export default function AnalyzePage() {
               </select>
               <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs">
                 <option value="">{t("discover.allCategories")}</option>
-                {CATEGORY_OPTIONS.map((cat) => (<option key={cat} value={cat}>{cat}</option>))}
+                {CATEGORY_OPTIONS.map((cat) => (<option key={cat} value={cat}>{t(`category.${cat}` as import("@/lib/i18n/translations").TranslationKey)}</option>))}
               </select>
               <select value={filterPlatform} onChange={(e) => setFilterPlatform(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs">
                 <option value="">{t("discover.allPlatforms")}</option>
-                <option value="instagram">Instagram</option>
-                <option value="tiktok">TikTok</option>
+                <option value="instagram">{t("platform.instagram")}</option>
+                <option value="tiktok">{t("platform.tiktok")}</option>
               </select>
               <Input type="number" min={0} max={100} placeholder={t("discover.filterMinVibe")} value={filterMinVibe} onChange={(e) => setFilterMinVibe(e.target.value)} className="w-28 text-xs" />
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortOption)} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs">
