@@ -37,6 +37,12 @@ import { useI18n } from "@/lib/i18n/context";
 import { DataSourceBanner } from "@/components/analysis/data-source-banner";
 import { OutreachModal } from "@/components/analysis/outreach-modal";
 import { type DataSource } from "@/lib/adapters/types";
+import {
+  calculateMatchScores,
+  type BrandCriteria,
+  type InfluencerForMatch,
+  type MatchResult,
+} from "@/lib/ai/matching-engine";
 
 type Tab = "overview" | "content" | "engagement" | "brandfit" | "coaching";
 
@@ -85,6 +91,7 @@ interface InfluencerData {
   estimated_cpe: number | null;
   platform_benchmark: number | null;
   representative_images: string[];
+  aesthetic_vector: number[] | null;
   last_analyzed_at: string | null;
   data_source: string | null;
   discovery_status: string | null;
@@ -108,7 +115,17 @@ export default function InfluencerProfilePage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reanalyzing, setReanalyzing] = useState(false);
-  const [brands, setBrands] = useState<Array<{ id: string; brand_name: string }>>([]);
+  const [brands, setBrands] = useState<
+    Array<{
+      id: string;
+      brand_name: string;
+      name: string;
+      tone_vector: number[] | null;
+      preferred_tiers: string[];
+      target_categories: string[];
+    }>
+  >([]);
+  const [brandMatchScores, setBrandMatchScores] = useState<Map<string, MatchResult>>(new Map());
   const [savingToBrand, setSavingToBrand] = useState<string | null>(null);
   const [savedBrands, setSavedBrands] = useState<Set<string>>(new Set());
   const [outreachOpen, setOutreachOpen] = useState(false);
@@ -142,7 +159,16 @@ export default function InfluencerProfilePage({
         const res = await fetch("/api/brand");
         const json = await res.json();
         if (res.ok && json.data) {
-          setBrands(json.data);
+          setBrands(
+            json.data.map((b: Record<string, unknown>) => ({
+              id: b.id as string,
+              brand_name: (b.name as string) || (b.brand_name as string) || "",
+              name: (b.name as string) || (b.brand_name as string) || "",
+              tone_vector: b.tone_vector as number[] | null,
+              preferred_tiers: (b.preferred_tiers as string[]) || [],
+              target_categories: (b.target_categories as string[]) || [],
+            }))
+          );
         }
       } catch {
         // silently fail — brands are optional
@@ -150,6 +176,46 @@ export default function InfluencerProfilePage({
     }
     fetchBrands();
   }, []);
+
+  // Compute match scores when both brands and influencer data are available
+  useEffect(() => {
+    if (!data || brands.length === 0) return;
+
+    const infForMatch: InfluencerForMatch = {
+      id: data.id,
+      handle: data.handle,
+      platform: data.platform,
+      display_name: data.display_name,
+      profile_image_url: data.profile_image_url,
+      aesthetic_vector: data.aesthetic_vector,
+      vibe_score: data.vibe_score,
+      engagement_score: data.engagement_score,
+      authenticity_score: data.authenticity_score,
+      tier: data.tier,
+      engagement_rate: data.engagement_rate,
+      follower_count: data.follower_count,
+      content_categories: data.content_categories,
+      representative_images: data.representative_images,
+      discovery_status: data.discovery_status,
+    };
+
+    const newScores = new Map<string, MatchResult>();
+
+    for (const brand of brands) {
+      if (!brand.tone_vector) continue;
+      const criteria: BrandCriteria = {
+        toneVector: brand.tone_vector,
+        preferredTiers: brand.preferred_tiers,
+        targetCategories: brand.target_categories,
+      };
+      const results = calculateMatchScores([infForMatch], criteria, { relaxed: true });
+      if (results.length > 0) {
+        newScores.set(brand.id, results[0]);
+      }
+    }
+
+    setBrandMatchScores(newScores);
+  }, [data, brands]);
 
   async function handleSaveToBrand(brandId: string) {
     if (!data) return;
@@ -652,38 +718,107 @@ export default function InfluencerProfilePage({
           {/* ─── Brand Fit Tab ───────────────────────────── */}
           {tab === "brandfit" && (
             <div className="space-y-4">
-              {/* Save to Brand — show existing brands */}
+              {/* Brand match scores + save */}
               {brands.length > 0 && (
-                <Card className="border-border/50 bg-card/50">
-                  <CardContent className="py-4">
-                    <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      {t("influencer.saveToBrand")}
-                    </p>
-                    <div className="space-y-2">
-                      {brands.map((brand) => {
-                        const isSaved = savedBrands.has(brand.id);
-                        return (
-                          <button
-                            key={brand.id}
-                            onClick={() => !isSaved && handleSaveToBrand(brand.id)}
-                            disabled={savingToBrand === brand.id || isSaved}
-                            className="flex w-full items-center gap-3 rounded-lg border border-border/50 bg-card px-4 py-3 text-left transition-colors hover:bg-muted/50 disabled:opacity-60"
-                          >
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <span className="flex-1 text-sm font-medium">{brand.brand_name}</span>
-                            {savingToBrand === brand.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            ) : isSaved ? (
-                              <BookmarkCheck className="h-4 w-4 text-primary" />
-                            ) : (
-                              <Bookmark className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="space-y-3">
+                  {brands.map((brand) => {
+                    const isSaved = savedBrands.has(brand.id);
+                    const match = brandMatchScores.get(brand.id);
+                    const hasScore = !!match;
+                    const noToneVector = !brand.tone_vector;
+
+                    return (
+                      <Card key={brand.id} className="border-border/50 bg-card/50 overflow-hidden">
+                        <CardContent className="py-4">
+                          {/* Brand name + save button row */}
+                          <div className="flex items-center gap-3 mb-3">
+                            <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <span className="flex-1 text-sm font-semibold">{brand.brand_name}</span>
+                            <button
+                              onClick={() => !isSaved && handleSaveToBrand(brand.id)}
+                              disabled={savingToBrand === brand.id || isSaved}
+                              className="flex items-center gap-1.5 rounded-md border border-border/50 px-2.5 py-1 text-xs transition-colors hover:bg-muted/50 disabled:opacity-60"
+                            >
+                              {savingToBrand === brand.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                              ) : isSaved ? (
+                                <BookmarkCheck className="h-3.5 w-3.5 text-primary" />
+                              ) : (
+                                <Bookmark className="h-3.5 w-3.5 text-muted-foreground" />
+                              )}
+                              {isSaved ? t("influencer.saved") : t("influencer.save")}
+                            </button>
+                          </div>
+
+                          {/* Match score display */}
+                          {hasScore && (
+                            <div className="space-y-2">
+                              {/* Overall score bar */}
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-muted-foreground w-16">{t("influencer.matchScore")}</span>
+                                <div className="flex-1 h-2 rounded-full bg-muted/30 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${
+                                      match.matchScore >= 80
+                                        ? "bg-green-500"
+                                        : match.matchScore >= 60
+                                          ? "bg-blue-500"
+                                          : match.matchScore >= 40
+                                            ? "bg-yellow-500"
+                                            : "bg-muted-foreground"
+                                    }`}
+                                    style={{ width: `${match.matchScore}%` }}
+                                  />
+                                </div>
+                                <span
+                                  className={`text-lg font-bold tabular-nums ${
+                                    match.matchScore >= 80
+                                      ? "text-green-500"
+                                      : match.matchScore >= 60
+                                        ? "text-blue-500"
+                                        : match.matchScore >= 40
+                                          ? "text-yellow-500"
+                                          : "text-muted-foreground"
+                                  }`}
+                                >
+                                  {match.matchScore}
+                                </span>
+                              </div>
+
+                              {/* Sub-score breakdown */}
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1">
+                                {[
+                                  { label: t("influencer.aestheticMatch"), value: match.aestheticMatch, weight: "45%" },
+                                  { label: t("influencer.tierFit"), value: match.tierCompatibility, weight: "20%" },
+                                  { label: t("influencer.categoryFit"), value: match.categoryAlignment, weight: "20%" },
+                                  { label: t("influencer.qualityScore"), value: match.qualityFilter, weight: "15%" },
+                                ].map((item) => (
+                                  <div key={item.label} className="flex items-center gap-2">
+                                    <span className="text-[10px] text-muted-foreground/70 w-14 truncate">{item.label}</span>
+                                    <div className="flex-1 h-1 rounded-full bg-muted/20 overflow-hidden">
+                                      <div
+                                        className="h-full rounded-full bg-primary/50"
+                                        style={{ width: `${item.value}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-[10px] tabular-nums text-muted-foreground">{item.value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* No tone vector — can't compute */}
+                          {noToneVector && (
+                            <p className="text-xs text-muted-foreground/60 italic">
+                              {t("influencer.noToneVector")}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               )}
 
               {/* No brands yet — create one */}
