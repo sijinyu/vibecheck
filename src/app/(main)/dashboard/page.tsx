@@ -470,7 +470,7 @@ export default function DashboardPage() {
                               {item.vibeScore ?? item.aestheticScore}
                             </p>
                             <p className="text-[10px] text-muted-foreground">
-                              {new Date(item.analyzedAt).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US")}
+                              VibeScore · {new Date(item.analyzedAt).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US")}
                             </p>
                           </div>
                           {/* Delete button */}
@@ -564,7 +564,7 @@ export default function DashboardPage() {
                               {item.vibeScore ?? item.aestheticScore}
                             </p>
                             <p className="text-[10px] text-muted-foreground">
-                              {new Date(item.savedAt).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US")}
+                              VibeScore · {new Date(item.savedAt).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US")}
                             </p>
                           </div>
                           {/* Unsave button */}
