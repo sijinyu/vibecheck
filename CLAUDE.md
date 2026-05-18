@@ -317,7 +317,7 @@ Supabase SQL Editor에서 순서대로 실행:
 - 인스타/틱톡 피드 수집 (RapidAPI 실제 연동 + mock fallback)
 - AI 미학 분석 (Gemini 2.5 Flash 실제 연동)
 - **VibeScore 5차원 복합 점수 시스템** (Aesthetic + Engagement + Consistency + Growth + Authenticity)
-- **인플루언서 상세 프로필 페이지** (Overview, Content, Engagement, Brand Fit, Coaching 5탭)
+- **인플루언서 상세 프로필 페이지** (Overview, Content, Engagement, Brand Fit(매칭점수), Coaching 5탭)
 - **AI 퍼스널 브랜딩 코칭** (Gemini 기반 전략/로드맵/콘텐츠 제안)
 - **PDF 리포트 다운로드** (jsPDF, 동적 import로 번들 최적화)
 - **브랜드-인플루언서 매칭 추천 엔진** (pgvector + 매칭 알고리즘)
@@ -361,7 +361,12 @@ Supabase SQL Editor에서 순서대로 실행:
 - **[Phase 2] UI/UX Polish** — grid card i18n 12키 추가, pb-24 제거(9파일), 태블릿 md:grid-cols-2 반응형, skeleton-card.tsx 스켈레톤 로더(3곳), 아웃리치 모달 AnimatePresence 애니메이션
 - **[Steve Jobs Audit] Sprint 1** — 가짜 벤치마크 제거 (getLikesBenchmark 실제 데이터), 랜딩 거짓말 3종 수정 (Vibe Search·무드보드 제거, CTA 정직화), 로그인 실패 에러 표시, _debug 필드 제거, stub 인플루언서 필터링 (curated/category-counts), NaN 점수 전파 방지 (clampScore unknown→50)
 - **[Steve Jobs Audit] Sprint 2** — 매칭 qualityFilter smoothStep 완화, mega 최저 보장 55→40, 모바일 삭제/해제 버튼 항상 표시, 전체삭제 AlertDialog 확인, 브랜드삭제 AlertDialog, 로그인 약관 underline 제거, iPhone safe-area-inset-bottom + viewport-fit:cover
-- **i18n 번역 키** — ~343개 (ko/en)
+- **i18n 번역 키** — ~400개 (ko/en)
+- **[Phase 3] Explore+Match+수익화** — Brand Lens 드롭다운, 매칭점수 오버레이, Free/Pro tier 게이팅, 업그레이드 모달, 사용량 추적 (user_usage 테이블)
+- **[Phase 3.5] 전략 피벗** — "자동 추천 도구" → "인플루언서 미적 분석 특화 도구" 리포지셔닝, PRD v3, 랜딩/메시징 전면 수정
+- **[Phase 3.5] 전 페이지 i18n 감사** — 6개 병렬 에이전트로 28건 하드코딩 발견·수정 (platform/score/metrics/dashboard/compare/profile/category/auth 등 60키 추가, 고아 키 3개 삭제)
+- **[Phase 3.5] 대시보드 VibeScore 라벨** — 점수 옆에 "VibeScore · 날짜" 명시 (브랜드 매칭점수와 혼동 방지)
+- **[Phase 3.5] Brand Fit 탭 매칭점수** — 인플루언서 상세 Brand Fit 탭에서 사용자의 모든 브랜드별 매칭점수 계산·시각화 (클라이언트사이드 calculateMatchScores, 4개 서브스코어 분해)
 
 ### Known Issues (미수정)
 - `SupabaseClient<any>` 타입 체크 무효화 (queries.ts)
