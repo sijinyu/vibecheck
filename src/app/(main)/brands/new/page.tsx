@@ -96,7 +96,7 @@ export default function NewBrandPage() {
 
       toast.success(t("brand.registeredSuccess"));
       if (json.data.brandId) {
-        router.push(`/brands/${json.data.brandId}`);
+        router.push(`/brands/${json.data.brandId}?tab=recommendations`);
       } else {
         router.push("/brands");
       }
@@ -202,7 +202,7 @@ export default function NewBrandPage() {
 
       toast.success(t("brand.moodboardSuccess"));
       if (json.data.brandId) {
-        router.push(`/brands/${json.data.brandId}`);
+        router.push(`/brands/${json.data.brandId}?tab=recommendations`);
       } else {
         router.push("/brands");
       }

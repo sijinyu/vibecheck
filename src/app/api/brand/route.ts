@@ -6,6 +6,7 @@ import { tryCreateClient } from "@/lib/supabase/server";
 import { createBrandProfile, getUserBrandProfiles } from "@/lib/supabase/queries";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { triggerBrandDiscovery } from "@/lib/discovery/brand-trigger";
+import { checkBrandLimit } from "@/lib/usage-tracker";
 
 export async function GET() {
   try {
@@ -44,6 +45,23 @@ export async function POST(request: Request) {
           return NextResponse.json(
             { error: { message: `브랜드 등록 요청 한도를 초과했습니다. ${Math.ceil((rl.resetAt - Date.now()) / 1000)}초 후 다시 시도해주세요.` } },
             { status: 429 }
+          );
+        }
+
+        // Free tier brand limit check
+        const brandLimit = await checkBrandLimit(supabaseForRL, user.id);
+        if (!brandLimit.allowed) {
+          return NextResponse.json(
+            {
+              error: {
+                message: `무료 플랜은 브랜드 ${brandLimit.limit}개까지 등록할 수 있습니다.`,
+                code: "LIMIT_REACHED",
+                upgrade: true,
+                current: brandLimit.current,
+                limit: brandLimit.limit,
+              },
+            },
+            { status: 403 }
           );
         }
       }

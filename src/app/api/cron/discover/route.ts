@@ -15,6 +15,7 @@ import {
 } from "@/lib/discovery/category-handle-suggester";
 import { backfillAestheticDescriptions } from "@/lib/ai/text-matching-engine";
 import { lightAnalyze } from "@/lib/discovery/light-analyzer";
+import { rebuildBrandCache } from "@/lib/ai/match-cache";
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -61,12 +62,14 @@ export async function GET(request: Request) {
       if (jobRotation === 0) {
         allResults.push(await runJob(supabase, 1)); // Full upgrade
         allResults.push(await runJob(supabase, 4)); // AI category discovery
+        allResults.push(await runJob(supabase, 5)); // Match cache refresh
       } else if (jobRotation === 1) {
         allResults.push(await runJob(supabase, 2)); // Image refresh
         allResults.push(await runJob(supabase, 3)); // Hashtag discovery
       } else {
         allResults.push(await runJob(supabase, 1)); // Full upgrade
         allResults.push(await runJob(supabase, 2)); // Image refresh
+        allResults.push(await runJob(supabase, 5)); // Match cache refresh
       }
     }
 
@@ -95,6 +98,7 @@ async function runJob(supabase: any, jobIndex: number): Promise<Record<string, u
     case 2: return jobRefreshImages(supabase);
     case 3: return jobTrendingHashtagDiscovery(supabase);
     case 4: return jobAiCategoryDiscovery(supabase);
+    case 5: return jobRefreshMatchCache(supabase);
     default: return { job: "none", message: "Unknown job index" };
   }
 }
@@ -361,5 +365,42 @@ async function jobAiCategoryDiscovery(supabase: any) {
     enqueued: totalEnqueued,
     immediateAnalyzed: analyzed,
     remainingForCron: Math.max(0, totalEnqueued - analyzed),
+  };
+}
+
+/**
+ * Job 5: Refresh match cache for all active brands.
+ * No API calls — pure computation (cosine similarity + weighted sum).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function jobRefreshMatchCache(supabase: any) {
+  const { data: brands } = await supabase
+    .from("brand_profiles")
+    .select("id")
+    .not("tone_vector", "is", null);
+
+  if (!brands || brands.length === 0) {
+    return { job: "refresh_match_cache", message: "No brands with tone vectors" };
+  }
+
+  let totalCached = 0;
+  const brandResults: Array<{ brandId: string; cached: number }> = [];
+
+  for (const brand of brands) {
+    try {
+      const cached = await rebuildBrandCache(supabase, brand.id);
+      totalCached += cached;
+      brandResults.push({ brandId: brand.id, cached });
+    } catch (err) {
+      console.error(`[cron-discover] Cache rebuild failed for brand ${brand.id}:`, err);
+      brandResults.push({ brandId: brand.id, cached: 0 });
+    }
+  }
+
+  return {
+    job: "refresh_match_cache",
+    brands: brands.length,
+    totalCached,
+    brandResults,
   };
 }

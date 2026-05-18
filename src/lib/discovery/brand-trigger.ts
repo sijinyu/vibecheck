@@ -20,6 +20,7 @@ import {
 } from "./ai-handle-suggester";
 import { lightAnalyze } from "./light-analyzer";
 import { canMakeApiCall } from "./api-budget";
+import { rebuildBrandCache } from "@/lib/ai/match-cache";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Client = SupabaseClient<any>;
@@ -158,6 +159,14 @@ export async function triggerBrandDiscovery(
     console.log(
       `[brand-trigger] Completed: ${analyzed}/${toAnalyzeNow.length} immediate, ${suggestions.length - IMMEDIATE_ANALYZE_COUNT} remaining for Cron`
     );
+
+    // Step 5: Rebuild match cache for this brand
+    try {
+      const cached = await rebuildBrandCache(client, brand.id);
+      console.log(`[brand-trigger] Match cache rebuilt: ${cached} entries for brand ${brand.id}`);
+    } catch (cacheErr) {
+      console.error("[brand-trigger] Cache rebuild failed:", cacheErr);
+    }
   } catch (err) {
     // Never throw — this is fire-and-forget
     console.error("[brand-trigger] Error:", err);

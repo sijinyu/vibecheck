@@ -54,7 +54,7 @@
 
 ## Project Overview
 
-인플루언서의 피드를 AI로 5차원 분석(VibeScore)하여, 브랜드 마케터가 협업 대상을 평가·매칭할 수 있게 해주는 SaaS 도구.
+인플루언서의 피드를 AI로 5차원 분석(VibeScore)하여, 브랜드 마케터가 협업 대상의 미적 감도와 브랜드 적합도를 정량 평가할 수 있게 해주는 **인플루언서 분석 특화 SaaS 도구**. 자동 추천이 아닌 "이미 찾은 인플루언서를 깊이 분석"하는 것이 핵심 가치.
 
 **핵심 스코어링**: `VibeScore = Aesthetic×0.25 + Engagement×0.30 + Consistency×0.15 + Growth×0.15 + Authenticity×0.15`
 
@@ -113,11 +113,11 @@ src/
 │   ├── middleware.ts               # Supabase 세션 + 보호 라우트
 │   ├── (auth)/login/               # Google OAuth 로그인
 │   ├── (main)/                     # 인증된 사용자 영역
-│   │   ├── analyze/page.tsx        # Discover 허브 (핸들 분석 + 트렌딩 + 필터/브라우징 그리드 + Vibe Search)
+│   │   ├── analyze/page.tsx        # 분석 허브 (핸들 분석 + 트렌딩 + 필터/브라우징 그리드)
 │   │   ├── brand/page.tsx          # → /brands 리다이렉트
 │   │   ├── brands/page.tsx         # 멀티 브랜드 리스트
 │   │   ├── brands/new/page.tsx     # 브랜드 신규 등록
-│   │   ├── brands/[brandId]/page.tsx  # 브랜드 상세 (4탭: 개요/AI추천/코칭/설정, 캠페인 숨김)
+│   │   ├── brands/[brandId]/page.tsx  # 브랜드 상세 (4탭: 개요/매칭분석/코칭/설정, 캠페인 숨김)
 │   │   ├── brands/[brandId]/campaigns/  # 캠페인 관리 (리스트/상세/생성)
 │   │   ├── compare/page.tsx        # 인플루언서 2-3명 비교
 │   │   ├── dashboard/page.tsx      # KPI + 차트 + 히스토리 + 즐겨찾기 + 날짜 필터 + CSV

@@ -2,7 +2,7 @@ export type Locale = "ko" | "en";
 
 const translations = {
   // Navigation
-  "nav.discover": { ko: "Discover", en: "Discover" },
+  "nav.discover": { ko: "분석", en: "Analyze" },
   "nav.brand": { ko: "Brand", en: "Brand" },
   "nav.compare": { ko: "Compare", en: "Compare" },
   "nav.dashboard": { ko: "Dashboard", en: "Dashboard" },
@@ -13,8 +13,8 @@ const translations = {
   "landing.hero.accent": { ko: "결", en: "vibe" },
   "landing.hero.line1end": { ko: "을 본다", en: ", not numbers" },
   "landing.hero.desc": {
-    ko: "인플루언서의 5차원 VibeScore를 AI로 산출하고, 브랜드 톤과 자동 매칭합니다",
-    en: "Calculate 5-dimensional VibeScore with AI and auto-match with brand tone",
+    ko: "인플루언서의 피드를 AI로 5차원 분석하여 미적 감도를 정량화합니다",
+    en: "Quantify influencer aesthetics with AI-powered 5-dimensional feed analysis",
   },
   "landing.cta": { ko: "시작하기", en: "Get Started" },
   "landing.ctaFree": { ko: "무료로 시작하기", en: "Start for Free" },
@@ -27,15 +27,15 @@ const translations = {
     ko: "미적 감도·참여율·일관성·성장성·진정성 5차원 AI 분석으로 0-100 복합 점수 산출",
     en: "5-dimensional AI analysis (aesthetics, engagement, consistency, growth, authenticity) for composite 0-100 score",
   },
-  "landing.feature.brandMatching.title": { ko: "Brand Matching", en: "Brand Matching" },
+  "landing.feature.brandMatching.title": { ko: "Brand Fit", en: "Brand Fit" },
   "landing.feature.brandMatching.desc": {
-    ko: "브랜드 톤 벡터와 인플루언서 스타일을 자동 매칭하여 최적 후보 추천",
-    en: "Auto-match brand tone vectors with influencer styles to recommend best candidates",
+    ko: "브랜드 톤 벡터와 인플루언서 스타일의 적합도를 AI가 수치로 평가합니다",
+    en: "AI evaluates brand-influencer fit by comparing tone vectors and style alignment",
   },
   "landing.feature.vibeSearch.title": { ko: "Vibe Search", en: "Vibe Search" },
   "landing.feature.vibeSearch.desc": {
-    ko: "무드 이미지를 업로드하면 매칭되는 인플루언서를 추천",
-    en: "Upload mood images to get matching influencer recommendations",
+    ko: "무드 이미지를 업로드하면 유사한 미적 감도의 인플루언서를 탐색",
+    en: "Upload mood images to find influencers with similar aesthetic vibes",
   },
 
   // Analyze
@@ -83,8 +83,8 @@ const translations = {
   // Brand
   "brand.title": { ko: "Brand Setup", en: "Brand Setup" },
   "brand.desc": {
-    ko: "브랜드 톤을 등록하면 인플루언서 매칭 추천을 받을 수 있어요",
-    en: "Register your brand tone to receive influencer matching recommendations",
+    ko: "브랜드 톤을 등록하면 인플루언서 분석 시 적합도를 평가할 수 있어요",
+    en: "Register your brand tone to evaluate influencer fit during analysis",
   },
   "brand.nameLabel": { ko: "브랜드 이름", en: "Brand Name" },
   "brand.namePlaceholder": { ko: "예: Studio Muse", en: "e.g., Studio Muse" },
@@ -108,7 +108,7 @@ const translations = {
   "brand.registeredDesc": { ko: "이제 인플루언서 분석 시 Brand Fit Score가 표시됩니다", en: "Brand Fit Score will now appear in influencer analyses" },
   "brand.registeredSuccess": { ko: "브랜드 톤 등록이 완료되었습니다", en: "Brand tone registration complete" },
   "brand.moodboardSuccess": { ko: "무드보드 분석이 완료되었습니다", en: "Moodboard analysis complete" },
-  "brand.recommendedInfluencers": { ko: "추천 인플루언서", en: "Recommended Influencers" },
+  "brand.recommendedInfluencers": { ko: "매칭 인플루언서", en: "Matched Influencers" },
   "brand.matching": { ko: "매칭 중...", en: "Matching..." },
   "brand.noMatches": { ko: "매칭할 수 있는 인플루언서가 아직 없습니다", en: "No matching influencers found yet" },
   "brand.noMatchesDesc": {
@@ -210,9 +210,9 @@ const translations = {
   "brands.addBrand": { ko: "브랜드 추가", en: "Add Brand" },
   "brands.notFound": { ko: "브랜드를 찾을 수 없습니다", en: "Brand not found" },
   "brands.empty": { ko: "등록된 브랜드가 없습니다", en: "No brands registered yet" },
-  "brands.emptyDesc": { ko: "첫 번째 브랜드를 등록하고 인플루언서 매칭을 시작하세요", en: "Register your first brand to start influencer matching" },
+  "brands.emptyDesc": { ko: "첫 번째 브랜드를 등록하고 인플루언서 적합도 평가를 시작하세요", en: "Register your first brand to start evaluating influencer fit" },
   "brands.savedInfluencers": { ko: "저장된 인플루언서", en: "Saved Influencers" },
-  "brands.detail.recommendations": { ko: "추천 인플루언서", en: "Recommended Influencers" },
+  "brands.detail.recommendations": { ko: "매칭 분석 결과", en: "Match Analysis" },
   "brands.detail.saved": { ko: "저장된 인플루언서", en: "Saved Influencers" },
   "brands.detail.settings": { ko: "설정", en: "Settings" },
   "brands.detail.edit": { ko: "편집", en: "Edit" },
@@ -225,10 +225,12 @@ const translations = {
 
   // Brand tabs
   "brands.tab.overview": { ko: "개요", en: "Overview" },
-  "brands.tab.recommendations": { ko: "AI 추천", en: "AI Match" },
+  "brands.tab.recommendations": { ko: "매칭 분석", en: "Brand Fit" },
   "brands.tab.coaching": { ko: "코칭", en: "Coaching" },
   "brands.tab.campaigns": { ko: "캠페인", en: "Campaigns" },
   "brands.tab.settings": { ko: "설정", en: "Settings" },
+
+  "brands.header.toneProfile": { ko: "톤 프로필", en: "Tone Profile" },
 
   // Brand overview section
   "brands.overview.aiSummary": { ko: "AI 요약", en: "AI Summary" },
@@ -253,12 +255,12 @@ const translations = {
   // Brand recommendations
   "brands.rec.avgMatch": { ko: "평균 매칭 점수", en: "Avg Match Score" },
   "brands.rec.tierDist": { ko: "티어 분포", en: "Tier Distribution" },
-  "brands.rec.total": { ko: "추천 인플루언서", en: "Recommended" },
+  "brands.rec.total": { ko: "매칭 인플루언서", en: "Matched" },
   "brands.rec.count": { ko: "명", en: "" },
   "brands.rec.avgVibe": { ko: "평균 VibeScore", en: "Avg VibeScore" },
   "brands.rec.outreach": { ko: "아웃리치", en: "Outreach" },
-  "brands.rec.discovering": { ko: "인플루언서를 탐색하고 있어요", en: "Discovering influencers..." },
-  "brands.rec.discoveringDesc": { ko: "AI가 브랜드에 어울리는 인플루언서를 찾고 있습니다. 보통 1~2분 정도 소요됩니다.", en: "AI is finding influencers that match your brand. This usually takes 1-2 minutes." },
+  "brands.rec.discovering": { ko: "매칭 분석 중이에요", en: "Analyzing matches..." },
+  "brands.rec.discoveringDesc": { ko: "AI가 브랜드와 인플루언서의 적합도를 분석하고 있습니다. 보통 1~2분 정도 소요됩니다.", en: "AI is analyzing brand-influencer fit. This usually takes 1-2 minutes." },
   "brands.rec.refresh": { ko: "새로고침", en: "Refresh" },
 
   // Brand campaigns
@@ -367,7 +369,7 @@ const translations = {
   "recCard.reason.tier": { ko: "선호 티어 부합", en: "Preferred tier match" },
   "recCard.reason.category": { ko: "타겟 카테고리 매칭", en: "Target category match" },
   "recCard.reason.authenticity": { ko: "높은 오디언스 진정성", en: "High audience authenticity" },
-  "recCard.reason.overall": { ko: "종합 점수 기반 추천", en: "Overall score recommendation" },
+  "recCard.reason.overall": { ko: "종합 점수 기반 매칭", en: "Overall score match" },
 
   // Discovery
   "discover.browseTitle": { ko: "인플루언서 브라우징", en: "Browse Influencers" },
@@ -440,9 +442,9 @@ const translations = {
 
   // Onboarding
   "onboarding.welcome": { ko: "VibeCheck에 오신 것을 환영합니다", en: "Welcome to VibeCheck" },
-  "onboarding.welcomeDesc": { ko: "AI가 인플루언서의 피드를 분석하고, 브랜드에 딱 맞는 크리에이터를 추천해드립니다. 아래 단계를 따라 시작하세요.", en: "AI analyzes influencer feeds and recommends creators that match your brand. Follow the steps below to get started." },
+  "onboarding.welcomeDesc": { ko: "AI가 인플루언서의 피드를 5차원으로 분석하고, 브랜드 적합도를 수치로 평가해드립니다. 아래 단계를 따라 시작하세요.", en: "AI analyzes influencer feeds across 5 dimensions and evaluates brand fit with data. Follow the steps below to get started." },
   "onboarding.step1Title": { ko: "브랜드 등록하기", en: "Register Your Brand" },
-  "onboarding.step1Desc": { ko: "브랜드 이름과 인스타그램 핸들만 입력하면 AI가 자동으로 분석하고 맞춤 인플루언서를 추천합니다.", en: "Just enter your brand name and Instagram handle — AI will analyze and recommend matching influencers." },
+  "onboarding.step1Desc": { ko: "브랜드 이름과 인스타그램 핸들만 입력하면 AI가 브랜드 톤을 분석하여 인플루언서 적합도 평가 기준을 만듭니다.", en: "Just enter your brand name and Instagram handle — AI analyzes your brand tone to create a fit evaluation baseline." },
   "onboarding.step2Title": { ko: "인플루언서 검색하기", en: "Search Influencers" },
   "onboarding.step2Desc": { ko: "인플루언서 핸들을 검색하면 VibeScore 5차원 분석, 콘텐츠 인사이트, 브랜드 핏을 확인할 수 있습니다.", en: "Search any influencer handle to see their 5-dimensional VibeScore, content insights, and brand fit." },
 
@@ -470,7 +472,7 @@ const translations = {
   "influencer.reanalyzeForEngagement": { ko: "정확한 참여 데이터를 보려면 \"재분석\"을 실행하세요", en: "Run \"Re-analyze\" to see accurate engagement data" },
   "influencer.saveToBrand": { ko: "내 브랜드에 저장", en: "Save to My Brand" },
   "influencer.registerBrandPrompt": { ko: "브랜드를 등록하고 인플루언서를 저장하세요", en: "Register a brand and save influencers" },
-  "influencer.registerBrandDesc": { ko: "브랜드를 등록하면 AI가 자동으로 최적의 인플루언서를 추천해드립니다", en: "Register your brand and AI will automatically recommend the best influencers" },
+  "influencer.registerBrandDesc": { ko: "브랜드를 등록하면 인플루언서 분석 시 브랜드 적합도를 함께 평가합니다", en: "Register your brand to evaluate brand fit alongside influencer analysis" },
   "influencer.registerBrandCta": { ko: "브랜드 등록하기", en: "Register Brand" },
   "influencer.addNewBrand": { ko: "새 브랜드 추가", en: "Add New Brand" },
 
@@ -562,6 +564,52 @@ const translations = {
   "benchmark.avgLikes": { ko: "평균 좋아요", en: "Avg. Likes" },
   "benchmark.commentRatio": { ko: "댓글/좋아요 비율", en: "Comment/Like Ratio" },
   "benchmark.tierAvg": { ko: "티어 평균", en: "Tier Average" },
+
+  // Brand Lens (Discover page overlay)
+  "brandLens.label": { ko: "Brand Lens", en: "Brand Lens" },
+  "brandLens.selectBrand": { ko: "브랜드 선택", en: "Select Brand" },
+  "brandLens.off": { ko: "OFF", en: "OFF" },
+  "brandLens.sortMatch": { ko: "매칭점수순", en: "Match Score" },
+  "brandLens.matchBanner": { ko: "내 브랜드와 {score}점 이상 매칭: {count}명", en: "{count} influencers with {score}+ match score" },
+  "brandLens.matchBadge": { ko: "매칭", en: "Match" },
+  "brandLens.noBrands": { ko: "브랜드를 먼저 등록해주세요", en: "Register a brand first" },
+  "brandLens.noBrandsLink": { ko: "브랜드 등록하기", en: "Register Brand" },
+
+  // Confidence level
+  "confidence.verified": { ko: "검증됨", en: "Verified" },
+  "confidence.preliminary": { ko: "예비 분석", en: "Preliminary" },
+  "confidence.deepAnalyze": { ko: "정밀 분석하기", en: "Deep Analyze" },
+  "confidence.analyzing": { ko: "분석 중...", en: "Analyzing..." },
+
+  // Discovery progress
+  "discovery.progress": { ko: "AI가 추가 인플루언서를 찾고 있습니다", en: "AI is finding more influencers" },
+  "discovery.progressCount": { ko: "{n}명 발견", en: "{n} found" },
+  "discovery.progressComplete": { ko: "탐색 완료", en: "Discovery complete" },
+
+  // Monetization — Free/Pro
+  "usage.freeAnalysis": { ko: "이번 달 분석 {used}/{limit}회 사용", en: "{used}/{limit} analyses used this month" },
+  "usage.freeBrand": { ko: "브랜드 {used}/{limit}개 등록", en: "{used}/{limit} brands registered" },
+  "usage.limitReached": { ko: "무료 한도에 도달했습니다", en: "Free limit reached" },
+  "usage.upgradeTitle": { ko: "Pro로 업그레이드", en: "Upgrade to Pro" },
+  "usage.upgradeDesc": { ko: "더 많은 분석과 매칭 평가를 이용하세요", en: "Get more analyses and match evaluations" },
+  "usage.free": { ko: "Free", en: "Free" },
+  "usage.pro": { ko: "Pro", en: "Pro" },
+  "usage.proPrice": { ko: "월 49,000원", en: "$39/month" },
+  "usage.comingSoon": { ko: "곧 출시됩니다", en: "Coming Soon" },
+  "usage.freeFeature.analysis": { ko: "월 3회 인플루언서 분석", en: "3 influencer analyses/month" },
+  "usage.freeFeature.brand": { ko: "1개 브랜드", en: "1 brand" },
+  "usage.freeFeature.recommendations": { ko: "매칭 결과 상위 3명", en: "Top 3 match results" },
+  "usage.freeFeature.outreach": { ko: "DM 생성 월 1회", en: "1 outreach/month" },
+  "usage.freeFeature.pdf": { ko: "PDF 리포트 월 1회", en: "1 PDF report/month" },
+  "usage.proFeature.analysis": { ko: "무제한 분석", en: "Unlimited analyses" },
+  "usage.proFeature.brand": { ko: "5개 브랜드", en: "5 brands" },
+  "usage.proFeature.recommendations": { ko: "전체 매칭 결과 표시", en: "All match results" },
+  "usage.proFeature.outreach": { ko: "무제한 DM/PDF", en: "Unlimited DM/PDF" },
+  "usage.proFeature.priority": { ko: "우선 분석 처리", en: "Priority analysis" },
+  "usage.blurOverlay": { ko: "Pro에서 확인", en: "View with Pro" },
+  "usage.upgradeCta": { ko: "Pro 알아보기", en: "Learn about Pro" },
+  "usage.close": { ko: "닫기", en: "Close" },
+  "usage.freeOutreach": { ko: "이번 달 DM {used}/{limit}회 사용", en: "{used}/{limit} outreach used this month" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

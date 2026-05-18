@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, use, type ChangeEvent, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -99,6 +99,8 @@ interface MatchResult {
   representativeImages: string[];
   trendDirection: string | null;
   trendMagnitude: number;
+  confidenceLevel?: "high" | "medium" | "low";
+  blurred?: boolean;
 }
 
 interface CoachingData {
@@ -150,10 +152,12 @@ export default function BrandDetailPage({
   const { brandId } = use(params);
   const { t } = useI18n();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as Tab) || "overview";
 
   const [brand, setBrand] = useState<BrandData | null>(null);
   const [loadingBrand, setLoadingBrand] = useState(true);
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useState<Tab>(initialTab);
 
   // Recommendations
   const [recommendations, setRecommendations] = useState<MatchResult[]>([]);
@@ -417,7 +421,7 @@ export default function BrandDetailPage({
 
               {brand.scores && (
                 <div className="flex flex-col items-center gap-1 lg:w-48">
-                  <p className="text-[10px] font-medium text-muted-foreground">Tone Profile</p>
+                  <p className="text-[10px] font-medium text-muted-foreground">{t("brands.header.toneProfile")}</p>
                   <AestheticRadarChart data={radarData} className="h-36 w-full" />
                 </div>
               )}
@@ -619,6 +623,26 @@ export default function BrandDetailPage({
 
           {!loadingRecs && recommendations.length > 0 && (
             <>
+              {/* Discovery progress banner (shown when brand was recently created) */}
+              {brand && (Date.now() - new Date(brand.created_at).getTime()) < 10 * 60_000 && (
+                <div className="mb-4 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span className="text-xs text-primary">
+                    {t("discovery.progress")}
+                  </span>
+                  <span className="ml-1 text-xs text-primary/70">
+                    ({t("discovery.progressCount").replace("{n}", String(recommendations.length))})
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto h-7 gap-1 text-xs text-primary"
+                    onClick={() => { setRecsFetched(false); fetchRecommendations(); }}
+                  >
+                    {t("brands.rec.refresh")}
+                  </Button>
+                </div>
+              )}
               <div className="mb-4 grid gap-3 sm:grid-cols-3">
                 <Card className="border-border/50 bg-card/50">
                   <CardContent className="py-3 text-center">
@@ -691,6 +715,8 @@ export default function BrandDetailPage({
                       representativeImages={rec.representativeImages ?? []}
                       trendDirection={rec.trendDirection ?? null}
                       trendMagnitude={rec.trendMagnitude ?? 0}
+                      confidenceLevel={rec.confidenceLevel}
+                      blurred={rec.blurred}
                     />
                     <div className="mt-1.5 flex justify-end">
                       <Button

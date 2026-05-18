@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ProfileCard } from "@/components/analysis/profile-card";
 import { VibeScoreBreakdown } from "@/components/analysis/vibe-score-breakdown";
 import { InsightsList } from "@/components/analysis/insights-list";
-import { Search, Loader2, TrendingUp, Sparkles, Zap, Crown, Hash, Heart, MessageCircle, Building2 } from "lucide-react";
+import { Search, Loader2, TrendingUp, Sparkles, Zap, Crown, Hash, Heart, MessageCircle, Building2, Eye } from "lucide-react";
 import { ShareButton } from "@/components/analysis/share-button";
 import { DownloadReportButton } from "@/components/analysis/download-report-button";
 import { InfluencerGridCard } from "@/components/analysis/influencer-grid-card";
@@ -20,8 +20,10 @@ import { type ProfileData } from "@/lib/adapters/types";
 import { type AestheticScores } from "@/lib/ai/scoring-engine";
 import { type VibeScoreResult } from "@/lib/ai/vibe-score-engine";
 import { type Influencer } from "@/lib/supabase/types";
+import { calculateMatchScores, type MatchResult } from "@/lib/ai/matching-engine";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/context";
+import { UpgradeModal } from "@/components/upgrade-modal";
 
 interface AnalysisResultData {
   profile: ProfileData;
@@ -48,7 +50,7 @@ interface RecentAnalysis {
   aestheticScore: number;
 }
 
-type SortOption = "vibeScore" | "followers" | "engagement" | "newest";
+type SortOption = "vibeScore" | "followers" | "engagement" | "newest" | "matchScore";
 
 const TIER_OPTIONS = ["nano", "micro", "mid", "macro", "mega"] as const;
 const CATEGORY_OPTIONS = ["Fashion", "Beauty", "Food", "Travel", "Fitness", "Lifestyle", "Tech", "Art"] as const;
@@ -140,6 +142,16 @@ export default function AnalyzePage() {
   const [activeHashtag, setActiveHashtag] = useState<string | null>(null);
   const [hashtagLoading, setHashtagLoading] = useState(false);
 
+  // Brand Lens
+  interface BrandLensItem { id: string; name: string; tone_vector: number[]; preferred_tiers: string[]; target_categories: string[]; }
+  const [brands, setBrands] = useState<BrandLensItem[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>("");
+  const [matchScoreMap, setMatchScoreMap] = useState<Map<string, number>>(new Map());
+
+  // Usage tracking
+  const [usageInfo, setUsageInfo] = useState<{ analysis_count: number; limit: number } | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
   // Fetch all discovery data on mount
   useEffect(() => {
     async function fetchRecent() {
@@ -214,7 +226,26 @@ export default function AnalyzePage() {
       }
     }
 
+    async function fetchMyBrands() {
+      try {
+        const res = await fetch("/api/brand");
+        const json = await res.json();
+        if (res.ok && json.data) {
+          setBrands(json.data.map((b: Record<string, unknown>) => ({
+            id: b.id as string,
+            name: b.name as string,
+            tone_vector: (b.tone_vector ?? []) as number[],
+            preferred_tiers: (b.preferred_tiers ?? []) as string[],
+            target_categories: (b.target_categories ?? []) as string[],
+          })));
+        }
+      } catch {
+        console.error("[analyze] fetchMyBrands failed");
+      }
+    }
+
     fetchRecent();
+    fetchMyBrands();
     fetchTrending();
     fetchTrendingBrands();
     fetchTrendingContent();
@@ -224,6 +255,19 @@ export default function AnalyzePage() {
     fetchCurated("engagement-leaders", setEngagementLeaders);
     fetchCurated("category-top", setCategoryTop);
     fetchCategoryCounts();
+
+    // Fetch usage
+    fetch("/api/usage")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.data) {
+          setUsageInfo({
+            analysis_count: json.data.usage.analysis_count,
+            limit: json.data.limits.analysis,
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Fetch browse results
@@ -258,6 +302,32 @@ export default function AnalyzePage() {
     fetchBrowse(0);
   }, [fetchBrowse]);
 
+  // Brand Lens: compute match scores client-side when brand or results change
+  useEffect(() => {
+    if (!selectedBrandId || browseResults.length === 0) {
+      setMatchScoreMap(new Map());
+      return;
+    }
+    const brand = brands.find((b) => b.id === selectedBrandId);
+    if (!brand || !brand.tone_vector?.length) return;
+
+    const results = calculateMatchScores(
+      browseResults as unknown as import("@/lib/ai/matching-engine").InfluencerForMatch[],
+      {
+        toneVector: brand.tone_vector,
+        preferredTiers: brand.preferred_tiers,
+        targetCategories: brand.target_categories,
+      },
+      { relaxed: true }
+    );
+
+    const map = new Map<string, number>();
+    for (const r of results) {
+      map.set(r.influencerId, r.matchScore);
+    }
+    setMatchScoreMap(map);
+  }, [selectedBrandId, browseResults, brands]);
+
   async function handleFormSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!handle.trim()) return;
@@ -274,12 +344,18 @@ export default function AnalyzePage() {
       const json = await response.json();
 
       if (!response.ok) {
+        if (json.error?.code === "LIMIT_REACHED") {
+          setShowUpgradeModal(true);
+        }
         setState({
           status: "error",
           message: json.error?.message ?? t("analyze.error.default"),
         });
         return;
       }
+
+      // Update usage count after successful analysis
+      setUsageInfo((prev) => prev ? { ...prev, analysis_count: prev.analysis_count + 1 } : prev);
 
       setState({ status: "success", result: json.data });
       toast.success(t("analyze.success"));
@@ -334,6 +410,11 @@ export default function AnalyzePage() {
         <p className="mt-2 text-sm text-muted-foreground">
           {t("analyze.title")}
         </p>
+        {usageInfo && (
+          <p className="mt-1 text-xs text-muted-foreground/70">
+            {t("usage.freeAnalysis").replace("{used}", String(usageInfo.analysis_count)).replace("{limit}", String(usageInfo.limit))}
+          </p>
+        )}
       </div>
 
       <Card className="border-border/50 bg-card/50 backdrop-blur">
@@ -951,6 +1032,36 @@ export default function AnalyzePage() {
               {t("discover.browseTitle")}
             </h2>
 
+            {/* Brand Lens */}
+            {brands.length > 0 && (
+              <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <Eye className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium text-primary">{t("brandLens.label")}</span>
+                <select
+                  value={selectedBrandId}
+                  onChange={(e) => {
+                    setSelectedBrandId(e.target.value);
+                    if (e.target.value && sortBy !== "matchScore") {
+                      setSortBy("matchScore");
+                    }
+                  }}
+                  className="rounded-md border border-primary/30 bg-background px-2 py-1 text-xs"
+                >
+                  <option value="">{t("brandLens.off")}</option>
+                  {brands.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+                {selectedBrandId && matchScoreMap.size > 0 && (
+                  <span className="ml-auto text-xs text-primary/80">
+                    {t("brandLens.matchBanner")
+                      .replace("{score}", "80")
+                      .replace("{count}", String([...matchScoreMap.values()].filter((s) => s >= 80).length))}
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Filter Bar */}
             <div className="mb-4 flex flex-wrap gap-2">
               <select value={filterTier} onChange={(e) => setFilterTier(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs">
@@ -968,6 +1079,7 @@ export default function AnalyzePage() {
               </select>
               <Input type="number" min={0} max={100} placeholder={t("discover.filterMinVibe")} value={filterMinVibe} onChange={(e) => setFilterMinVibe(e.target.value)} className="w-28 text-xs" />
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortOption)} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs">
+                {selectedBrandId && <option value="matchScore">{t("brandLens.sortMatch")}</option>}
                 <option value="vibeScore">{t("discover.sortVibeScore")}</option>
                 <option value="followers">{t("discover.sortFollowers")}</option>
                 <option value="engagement">{t("discover.sortEngagement")}</option>
@@ -983,7 +1095,10 @@ export default function AnalyzePage() {
             ) : browseResults.length > 0 ? (
               <>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                  {browseResults.map((item) => (
+                  {(sortBy === "matchScore" && selectedBrandId
+                    ? [...browseResults].sort((a, b) => (matchScoreMap.get(b.id) ?? 0) - (matchScoreMap.get(a.id) ?? 0))
+                    : browseResults
+                  ).map((item) => (
                     <InfluencerGridCard
                       key={item.id}
                       handle={item.handle}
@@ -1000,6 +1115,7 @@ export default function AnalyzePage() {
                       trendMagnitude={item.trend_magnitude}
                       representativeImages={item.representative_images}
                       lastAnalyzedAt={item.last_analyzed_at}
+                      matchScore={selectedBrandId ? (matchScoreMap.get(item.id) ?? null) : null}
                     />
                   ))}
                 </div>
@@ -1023,6 +1139,7 @@ export default function AnalyzePage() {
           </div>
         </>
       )}
+      <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </PageTransition>
   );
 }

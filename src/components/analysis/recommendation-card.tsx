@@ -12,6 +12,10 @@ import {
   Sparkles,
   ImageOff,
   Plus,
+  CheckCircle2,
+  Zap,
+  Loader2,
+  Lock,
 } from "lucide-react";
 import { InfluencerTierBadge } from "./influencer-tier-badge";
 import { getScoreColor } from "@/lib/score-utils";
@@ -37,8 +41,11 @@ export interface RecommendationCardProps {
   trendDirection: string | null;
   trendMagnitude: number;
   aiSuggestionReason?: string | null;
+  confidenceLevel?: "high" | "medium" | "low";
+  blurred?: boolean;
   onSave?: (influencerId: string) => void;
   onAddToCampaign?: (influencerId: string) => void;
+  onDeepAnalyze?: (handle: string) => void;
   isSaved?: boolean;
   className?: string;
 }
@@ -197,13 +204,17 @@ export function RecommendationCard({
   representativeImages,
   trendDirection,
   aiSuggestionReason,
+  confidenceLevel,
+  blurred = false,
   onSave,
   onAddToCampaign,
+  onDeepAnalyze,
   isSaved = false,
   className,
 }: RecommendationCardProps) {
   const { t } = useI18n();
   const [profileImgError, setProfileImgError] = useState(false);
+  const [isDeepAnalyzing, setIsDeepAnalyzing] = useState(false);
   const platformLabel = getPlatformLabel(platform);
   const primaryCategory = contentCategories[0] ?? null;
   const visibleHashtags = topHashtags.slice(0, 5);
@@ -212,6 +223,43 @@ export function RecommendationCard({
     e.preventDefault();
     e.stopPropagation();
     onSave?.(influencerId);
+  }
+
+  async function handleDeepAnalyze(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDeepAnalyzing(true);
+    try {
+      onDeepAnalyze?.(handle);
+    } finally {
+      // Caller is responsible for async, we reset after a timeout
+      setTimeout(() => setIsDeepAnalyzing(false), 30000);
+    }
+  }
+
+  if (blurred) {
+    return (
+      <div
+        className={`relative flex flex-col gap-3 rounded-xl border border-border/50 bg-card/50 p-4 overflow-hidden ${className ?? ""}`}
+      >
+        {/* Blurred content preview */}
+        <div className="pointer-events-none select-none blur-md opacity-60">
+          <div className="flex items-start justify-between gap-3">
+            <MiniGallery images={representativeImages} handle={handle} />
+            <MatchScoreBadge score={matchScore} matchLabel={t("recCard.match")} />
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="text-sm font-semibold">@{handle}</span>
+            <InfluencerTierBadge tier={tier} />
+          </div>
+        </div>
+        {/* Upgrade overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-sm">
+          <Lock className="h-6 w-6 text-muted-foreground" />
+          <span className="text-sm font-medium">{t("usage.blurOverlay")}</span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -224,7 +272,7 @@ export function RecommendationCard({
         <MatchScoreBadge score={matchScore} matchLabel={t("recCard.match")} />
       </div>
 
-      {/* ── Row 2: Identity — avatar + handle + tier + platform + category ── */}
+      {/* ── Row 2: Identity — avatar + handle + tier + platform + category + confidence ── */}
       <div className="flex flex-wrap items-center gap-1.5">
         <div className="relative h-6 w-6 shrink-0 rounded-full">
           {profileImageUrl && !profileImgError ? (
@@ -250,6 +298,19 @@ export function RecommendationCard({
         {primaryCategory && (
           <span className="rounded-md border border-border/40 bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted-foreground">
             {primaryCategory}
+          </span>
+        )}
+        {/* Confidence level badge */}
+        {confidenceLevel === "high" && (
+          <span className="flex items-center gap-0.5 rounded-md border border-emerald-400/30 bg-emerald-400/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400">
+            <CheckCircle2 className="h-2.5 w-2.5" />
+            {t("confidence.verified")}
+          </span>
+        )}
+        {(confidenceLevel === "medium" || confidenceLevel === "low") && (
+          <span className="flex items-center gap-0.5 rounded-md border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
+            <Zap className="h-2.5 w-2.5" />
+            {t("confidence.preliminary")}
           </span>
         )}
       </div>
@@ -344,6 +405,20 @@ export function RecommendationCard({
                 className={`h-3 w-3 ${isSaved ? "fill-rose-400 stroke-rose-400" : ""}`}
               />
               {isSaved ? t("recCard.saved") : t("recCard.save")}
+            </button>
+          )}
+          {onDeepAnalyze && (confidenceLevel === "medium" || confidenceLevel === "low") && (
+            <button
+              onClick={handleDeepAnalyze}
+              disabled={isDeepAnalyzing}
+              className="flex items-center gap-1 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[11px] font-medium text-amber-500 transition-colors hover:border-amber-400/50 hover:bg-amber-400/20 disabled:opacity-50"
+            >
+              {isDeepAnalyzing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Zap className="h-3 w-3" />
+              )}
+              {isDeepAnalyzing ? t("confidence.analyzing") : t("confidence.deepAnalyze")}
             </button>
           )}
           <Link

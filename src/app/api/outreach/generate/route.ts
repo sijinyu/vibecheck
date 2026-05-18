@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { tryCreateClient } from "@/lib/supabase/server";
 import { generateOutreach } from "@/lib/ai/outreach-generator";
+import { checkLimit, incrementUsage } from "@/lib/usage-tracker";
 
 export async function POST(request: Request) {
   try {
@@ -19,6 +20,23 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: { message: "로그인이 필요합니다" } },
         { status: 401 }
+      );
+    }
+
+    // Free tier outreach limit check
+    const outreachLimit = await checkLimit(supabase, user.id, "outreach");
+    if (!outreachLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: {
+            message: `이번 달 무료 아웃리치 ${outreachLimit.limit}회를 모두 사용했습니다.`,
+            code: "LIMIT_REACHED",
+            upgrade: true,
+            current: outreachLimit.current,
+            limit: outreachLimit.limit,
+          },
+        },
+        { status: 403 }
       );
     }
 
@@ -85,6 +103,9 @@ export async function POST(request: Request) {
         aestheticDescription: influencer.aesthetic_description,
       },
     });
+
+    // Increment outreach usage
+    await incrementUsage(supabase, user.id, "outreach_count").catch(() => {});
 
     return NextResponse.json({ data: result });
   } catch (err) {

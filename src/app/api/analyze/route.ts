@@ -6,6 +6,7 @@ import { calculateVibeScore } from "@/lib/ai/vibe-score-engine";
 import { tryCreateClient } from "@/lib/supabase/server";
 import { upsertInfluencer, insertAnalysis } from "@/lib/supabase/queries";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { checkLimit, incrementUsage } from "@/lib/usage-tracker";
 
 export async function POST(request: Request) {
   try {
@@ -38,6 +39,23 @@ export async function POST(request: Request) {
         return NextResponse.json(
           { error: { code: "RATE_LIMITED", message: "요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요." } },
           { status: 429 }
+        );
+      }
+
+      // Free tier usage limit
+      const usageCheck = await checkLimit(supabaseAuth, user.id, "analysis");
+      if (!usageCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "LIMIT_REACHED",
+              message: `이번 달 무료 분석 ${usageCheck.limit}회를 모두 사용했습니다.`,
+              upgrade: true,
+              current: usageCheck.current,
+              limit: usageCheck.limit,
+            },
+          },
+          { status: 403 }
         );
       }
     }
@@ -139,7 +157,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // Step 5: Return result
+    // Step 5: Increment usage counter
+    if (userId && supabaseAuth) {
+      await incrementUsage(supabaseAuth, userId, "analysis_count").catch(() => {});
+    }
+
+    // Step 6: Return result
     return NextResponse.json({
       data: {
         profile: feedResult.data.profile,

@@ -56,29 +56,36 @@ export interface InfluencerForMatch {
   ai_suggestion_reason?: string | null;
 }
 
-interface BrandCriteria {
+export interface BrandCriteria {
   toneVector: number[];
   preferredTiers: string[];
   targetCategories: string[];
   idealInfluencerProfile?: Record<string, unknown>;
 }
 
+interface QualityGateOptions {
+  /** Relax image requirement for light profiles (1 instead of 3) */
+  relaxed?: boolean;
+}
+
 /**
  * Quality gate — filter out ghost/empty accounts before scoring.
  */
-function passesQualityGate(inf: InfluencerForMatch): boolean {
+function passesQualityGate(inf: InfluencerForMatch, opts?: QualityGateOptions): boolean {
   if ((inf.follower_count ?? 0) < 300) return false;
-  if ((inf.representative_images?.length ?? 0) < 3) return false;
+  const minImages = opts?.relaxed ? 1 : 3;
+  if ((inf.representative_images?.length ?? 0) < minImages) return false;
   if ((inf.engagement_rate ?? 0) <= 0) return false;
   return true;
 }
 
 export function calculateMatchScores(
   influencers: InfluencerForMatch[],
-  brand: BrandCriteria
+  brand: BrandCriteria,
+  opts?: QualityGateOptions
 ): MatchResult[] {
   return influencers
-    .filter(passesQualityGate)
+    .filter((inf) => passesQualityGate(inf, opts))
     .map((inf) => {
       const status = inf.discovery_status ?? "full";
       const isLight = status === "light";

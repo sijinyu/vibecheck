@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { TrendingUp, TrendingDown, Minus, Clock, ImageOff, MessageSquare } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Clock, ImageOff, MessageSquare, Sparkles } from "lucide-react";
 import { getScoreColor } from "@/lib/score-utils";
 import { InfluencerTierBadge } from "./influencer-tier-badge";
 import { useI18n } from "@/lib/i18n/context";
@@ -26,6 +26,8 @@ interface InfluencerGridCardProps {
   representativeImages?: string[];
   lastAnalyzedAt?: string | null;
   discoveryStatus?: string | null;
+  /** Brand Lens: match score overlay (0-100) */
+  matchScore?: number | null;
   onOutreachClick?: (handle: string, platform: string) => void;
 }
 
@@ -97,6 +99,7 @@ export function InfluencerGridCard({
   representativeImages = [],
   lastAnalyzedAt,
   discoveryStatus,
+  matchScore,
   onOutreachClick,
 }: InfluencerGridCardProps) {
   const { t } = useI18n();
@@ -157,13 +160,46 @@ export function InfluencerGridCard({
             ))}
             {/* Gradient fade at bottom to blend into card body */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-card/80 to-transparent" />
+            {/* Brand Lens match score badge */}
+            {matchScore != null && (
+              <div
+                className={`absolute right-2 top-2 z-10 flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold shadow-md backdrop-blur-sm ${
+                  matchScore >= 80
+                    ? "bg-emerald-500/90 text-white"
+                    : matchScore >= 60
+                    ? "bg-blue-500/90 text-white"
+                    : matchScore >= 40
+                    ? "bg-amber-500/90 text-white"
+                    : "bg-muted/90 text-foreground"
+                }`}
+              >
+                <Sparkles className="h-3 w-3" />
+                {matchScore}
+              </div>
+            )}
           </div>
         ) : (
           /* Placeholder strip when no images */
-          <div className="flex h-24 w-full items-center justify-center bg-muted/20">
+          <div className="relative flex h-24 w-full items-center justify-center bg-muted/20">
             <span className="text-3xl font-bold text-muted-foreground/20 select-none">
               {initials}
             </span>
+            {matchScore != null && (
+              <div
+                className={`absolute right-2 top-2 z-10 flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold shadow-md ${
+                  matchScore >= 80
+                    ? "bg-emerald-500/90 text-white"
+                    : matchScore >= 60
+                    ? "bg-blue-500/90 text-white"
+                    : matchScore >= 40
+                    ? "bg-amber-500/90 text-white"
+                    : "bg-muted/90 text-foreground"
+                }`}
+              >
+                <Sparkles className="h-3 w-3" />
+                {matchScore}
+              </div>
+            )}
           </div>
         )}
 
